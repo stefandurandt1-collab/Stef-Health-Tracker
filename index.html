@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Health Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Health Tracker"/>
+<meta name="theme-color" content="#0a1628"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230a1628'/%3E%3Ctext y='340' x='256' text-anchor='middle' font-size='300'%3E%F0%9F%92%A7%3C/text%3E%3C/svg%3E"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#0a1628;font-family:Georgia,'Times New Roman',serif;color:#e0f0ff;min-height:100vh;overscroll-behavior:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+button:active{transform:scale(0.93)}
+#app{display:flex;flex-direction:column;align-items:center;padding:20px 14px 60px;min-height:100vh;min-height:100dvh;background:linear-gradient(160deg,#0a1628 0%,#0d2137 55%,#091a2e 100%)}
+.header{text-align:center;margin-bottom:14px}
+.header-sub{font-size:9px;letter-spacing:.35em;color:#4fc3f7;text-transform:uppercase;margin-bottom:2px}
+.header-title{font-size:24px;font-weight:bold;letter-spacing:-.5px}
+.header-date{font-size:11px;color:#6ea8d0;margin-top:2px}
+.day-selector{margin-bottom:14px;width:100%;max-width:340px;position:relative}
+.day-btn{width:100%;background:rgba(79,195,247,.08);border:1.5px solid rgba(79,195,247,.28);border-radius:12px;padding:10px 14px;color:#e0f0ff;font-size:13px;display:flex;align-items:center;justify-content:space-between}
+.day-btn span.chg{color:#4fc3f7;font-size:11px}
+.day-dropdown{display:none;position:absolute;top:calc(100% + 5px);left:0;right:0;background:rgba(9,26,46,.98);border:1.5px solid rgba(79,195,247,.22);border-radius:12px;overflow:hidden;z-index:20}
+.day-dropdown.open{display:block}
+.day-option{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.04);padding:10px 14px;color:#b0d0e8;font-size:13px;display:flex;justify-content:space-between;text-align:left}
+.day-option.active{background:rgba(79,195,247,.13);color:#4fc3f7}
+.day-option span.ml{color:#4a7a9b;font-size:11px}
+.tabs{display:flex;background:rgba(255,255,255,.04);border-radius:14px;padding:3px;margin-bottom:18px;width:100%;max-width:340px;gap:2px}
+.tab{flex:1;padding:9px 0;border-radius:11px;color:#3a6a8a;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:1px;transition:all .2s}
+.tab.active{background:rgba(79,195,247,.18);color:#4fc3f7;font-weight:bold}
+.tab-icon{font-size:16px}
+.panel{width:100%;max-width:340px;display:none}
+.panel.active{display:block}
+/* Water */
+.water-circle{position:relative;margin-bottom:16px;display:flex;justify-content:center}
+.tap-btn{width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(79,195,247,.32),rgba(0,100,180,.18));border:2.5px solid rgba(79,195,247,.48);color:#e0f0ff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 36px rgba(79,195,247,.18);margin-bottom:18px;margin-left:auto;margin-right:auto}
+.tap-btn .icon{font-size:38px}
+.tap-btn .amount{font-size:19px;font-weight:bold;margin-top:3px}
+.tap-btn .hint{font-size:10px;color:#6ea8d0;margin-top:1px}
+.status-pill{border-radius:10px;padding:6px 18px;margin-bottom:16px;font-size:13px;text-align:center}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px;text-align:center}
+.stat-val{font-size:16px;font-weight:bold}
+.stat-lbl{font-size:10px;color:#4a7a9b;margin-top:2px;text-transform:uppercase;letter-spacing:.1em}
+.row{display:flex;gap:10px;width:100%}
+.undo-btn{flex:1;background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.28);border-radius:12px;padding:11px;color:#ef9090;font-size:13px}
+.undo-btn:disabled{color:#3a5a6b;cursor:not-allowed}
+.reset-btn{background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px;color:#4a7a9b;font-size:12px}
+/* Cards */
+.card{border-radius:16px;padding:16px;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:bold}
+.card-sub{font-size:10px;color:#7a6a8a;margin-top:1px}
+.progress-row{display:flex;gap:6px;margin:10px 0}
+.progress-seg{flex:1;height:7px;border-radius:4px;transition:background .3s}
+.minerals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.mineral{background:rgba(0,0,0,.2);border-radius:8px;padding:7px 4px;text-align:center}
+.mineral-val{font-size:12px;font-weight:bold}
+.mineral-lbl{font-size:9px;color:#6a4a8a;margin-top:1px;text-transform:uppercase;letter-spacing:.04em}
+.add-row{display:flex;gap:8px}
+.add-minus{flex:1;padding:9px;border-radius:10px;font-size:20px}
+.add-plus{flex:2;padding:9px;border-radius:10px;font-size:13px;font-weight:bold}
+.card-hint{font-size:9px;margin-top:7px;text-align:center}
+/* Totals */
+.totals-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px}
+.totals-title{font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:9px}
+.totals-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.total-item{text-align:center}
+.total-lbl{font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.total-val{font-size:13px;font-weight:bold}
+.mini-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:4px}
+.mini-fill{height:100%;border-radius:2px;transition:width .4s}
+/* Drinks */
+.warning-banner{border-radius:12px;padding:10px 14px;margin-bottom:14px;text-align:center}
+.drink-dots{display:flex;gap:8px;margin-bottom:14px}
+.drink-dot{flex:1;height:10px;border-radius:5px;transition:background .3s}
+.warn-msg{border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#ef9090;text-align:center;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4)}
+.drink-btns{display:flex;gap:8px}
+.drink-minus{padding:11px 13px;border-radius:11px;border:1px solid rgba(244,114,182,.28);background:rgba(244,114,182,.07);color:#f472b6;font-size:22px}
+.drink-1{flex:1;padding:11px 6px;border-radius:11px;font-size:12px;font-weight:bold}
+.drink-15{flex:1;padding:11px 6px;border-radius:11px;font-size:12px;font-weight:bold}
+.week-bar-wrap{height:8px;background:rgba(244,114,182,.1);border-radius:4px}
+.week-bar{height:100%;border-radius:4px;transition:width .4s}
+/* Smokes */
+.cig-roadmap{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cig-cell{text-align:center}
+.cig-box{width:100%;aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.cig-wlbl{font-size:7px;margin-top:2px}
+/* Caffeine */
+.caff-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.caff-src{padding:11px 8px;border-radius:11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.caff-src .src-icon{font-size:20px}
+.caff-src .src-lbl{font-size:11px;font-weight:bold}
+.caff-src .src-mg{font-size:10px}
+.log-entry{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(255,255,255,.03);border-radius:9px}
+/* Supps */
+.supp-card{border-radius:14px;padding:14px;margin-bottom:10px;transition:all .25s}
+.supp-inner{display:flex;justify-content:space-between;align-items:flex-start}
+.supp-info{flex:1}
+.supp-name-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.supp-dose{font-size:11px;color:#b0d0e8;margin-bottom:2px}
+.supp-sub{font-size:10px;color:#4a6a7a}
+.supp-toggle{width:44px;height:44px;border-radius:12px;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mag-btns{display:flex;gap:8px;margin-top:10px}
+.mag-btn{flex:1;padding:9px 6px;border-radius:10px;font-size:12px;font-weight:bold}
+.supp-tip{font-size:9px;margin-top:8px}
+.prog-bar-wrap{display:flex;gap:6px;margin-bottom:18px}
+.prog-seg{flex:1;height:6px;border-radius:3px;transition:background .3s}
+/* Info */
+.info-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 14px;font-size:10px;color:#4a6a5a;line-height:1.6}
+.footer{margin-top:22px;font-size:9px;color:#1a3040;text-align:center;max-width:300px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.panel.active{animation:fadeIn .2s ease}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-sub">Daily Protocol</div>
+    <div class="header-title">Health Tracker</div>
+    <div class="header-date" id="hdr-date"></div>
+  </div>
+
+  <div class="day-selector">
+    <button class="day-btn" id="day-btn">
+      <span id="day-label">😴 Rest Day</span>
+      <span class="chg">▼ change</span>
+    </button>
+    <div class="day-dropdown" id="day-dropdown"></div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <!-- WATER -->
+
+  <div class="panel active" id="panel-water">
+    <div class="water-circle">
+      <svg id="water-svg" width="185" height="185" viewBox="0 0 200 200">
+        <defs>
+          <clipPath id="cc"><circle cx="100" cy="100" r="88"/></clipPath>
+          <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+            <stop id="wg-stop1" offset="0%" stop-opacity="0.9"/>
+            <stop id="wg-stop2" offset="100%" stop-opacity="0.5"/>
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="100" r="94" fill="none" stroke="rgba(79,195,247,0.12)" stroke-width="2"/>
+        <circle cx="100" cy="100" r="88" fill="rgba(5,20,40,0.65)"/>
+        <g clip-path="url(#cc)">
+          <rect id="wave-rect" x="0" width="200" height="200"/>
+          <path id="wave-path" opacity="0.25"/>
+        </g>
+        <circle id="arc" cx="100" cy="100" r="88" fill="none" stroke-width="3" stroke-dasharray="0 553" stroke-linecap="round" transform="rotate(-90 100 100)" style="transition:stroke-dasharray .5s ease,stroke .5s ease"/>
+        <text id="svg-intake" x="100" y="87" text-anchor="middle" fill="#e0f0ff" font-size="29" font-weight="bold" font-family="Georgia,serif"></text>
+        <text id="svg-target" x="100" y="106" text-anchor="middle" fill="#6ea8d0" font-size="11" font-family="Georgia,serif"></text>
+        <text id="svg-pct" x="100" y="128" text-anchor="middle" font-size="16" font-weight="bold" font-family="Georgia,serif"></text>
+      </svg>
+    </div>
+    <div class="status-pill" id="status-pill"></div>
+    <button class="tap-btn" id="tap-water" style="display:flex">
+      <span class="icon">💧</span>
+      <span class="amount">+450ml</span>
+      <span class="hint">tap to log</span>
+    </button>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-remaining"></div><div class="stat-lbl">Remaining</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-cups"></div><div class="stat-lbl">Cups left</div></div>
+    </div>
+    <div class="row">
+      <button class="undo-btn" id="undo-water">← Undo 450ml</button>
+      <button class="reset-btn" id="reset-btn">Reset</button>
+    </div>
+  </div>
+
+  <!-- ELECTROLYTES -->
+
+  <div class="panel" id="panel-electrolytes">
+    <div style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic" id="elec-note"></div>
+    <div id="elec-cards"></div>
+    <div class="totals-card">
+      <div class="totals-title">Today's Totals</div>
+      <div class="totals-grid" id="totals-grid"></div>
+      <div style="font-size:9px;color:#1e3a4a;margin-top:9px;text-align:center">Potassium is your most important mineral gap · Focus on Na:K ratio</div>
+    </div>
+  </div>
+
+  <!-- DRINKS -->
+
+  <div class="panel" id="panel-drinks">
+    <div id="drink-cutoff-banner"></div>
+    <div class="card" id="session-card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div class="card-title" style="color:#f472b6">Tonight's Session</div><div class="card-sub">Max 4 std drinks · stops at 8pm</div></div>
+        <div style="text-align:right"><div style="font-size:22px;font-weight:bold" id="session-count">0</div><div style="font-size:10px;color:#7a4a6a">/ 4</div></div>
+      </div>
+      <div class="drink-dots" id="drink-dots"></div>
+      <div id="drink-warning" style="display:none" class="warn-msg"></div>
+      <div class="drink-btns">
+        <button class="drink-minus" id="drink-minus">−</button>
+        <button class="drink-1" id="drink-1">+ 1 std<br/><span style="font-size:10px;font-weight:normal">+250ml 💧</span></button>
+        <button class="drink-15" id="drink-15">+ 1.5 std<br/><span style="font-size:10px;font-weight:normal">+375ml 💧</span></button>
+      </div>
+      <div style="font-size:9px;color:#6a3a58;margin-top:7px;text-align:center">Water auto-logs with each drink</div>
+    </div>
+    <div class="card" id="week-card" style="padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><div style="font-size:13px;font-weight:bold;color:#f472b6">This Week</div><div style="font-size:10px;color:#7a4a6a;margin-top:1px">Weekly limit: 10 std drinks</div></div>
+        <div style="font-size:20px;font-weight:bold;color:#f472b6" id="week-count">0 <span style="font-size:12px;color:#7a4a6a">/ 10</span></div>
+      </div>
+      <div class="week-bar-wrap"><div class="week-bar" id="week-bar" style="width:0%;background:#f472b6"></div></div>
+      <div style="font-size:10px;color:#5a3a5a;margin-top:8px;text-align:center" id="week-remaining">10 drinks remaining this week</div>
+    </div>
+    <div class="info-card"><div style="color:#6ea8d0;font-weight:bold;margin-bottom:4px">Recovery rules 🧠</div>Alcohol is your #1 recovery killer (-18% Whoop score). Front-load hydration before and during — not just after.</div>
+  </div>
+
+  <!-- SMOKES -->
+
+  <div class="panel" id="panel-smokes">
+    <div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.22);border-radius:14px;padding:14px 16px;margin-bottom:14px;text-align:center">
+      <div style="font-size:10px;color:#a07820;text-transform:uppercase;letter-spacing:.15em;margin-bottom:3px" id="cig-week-lbl"></div>
+      <div id="cig-goal-display"></div>
+    </div>
+    <div class="card" id="cig-card" style="margin-bottom:12px;padding:18px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div class="card-title" id="cig-title" style="color:#fbbf24"></div><div class="card-sub" id="cig-subtitle"></div></div>
+        <div style="text-align:right"><div style="font-size:28px;font-weight:bold;color:#fbbf24" id="cig-count">0</div><div style="font-size:10px;color:#7a6a30" id="cig-target-lbl"></div></div>
+      </div>
+      <div id="cig-bar-wrap" style="margin-bottom:14px"><div style="height:8px;background:rgba(251,191,36,.1);border-radius:4px"><div id="cig-bar" style="height:100%;border-radius:4px;transition:width .4s;background:#fbbf24;width:0%"></div></div><div id="cig-over-lbl" style="display:none;font-size:10px;color:#ef7070;margin-top:4px;text-align:center"></div></div>
+      <div style="display:flex;gap:10px">
+        <button id="cig-minus" style="flex:1;padding:11px;border-radius:11px;border:1px solid rgba(251,191,36,.28);background:rgba(251,191,36,.06);color:#fbbf24;font-size:22px">−</button>
+        <button id="cig-plus" style="flex:2;padding:11px;border-radius:11px;border:1px solid rgba(251,191,36,.45);background:rgba(251,191,36,.15);color:#fbbf24;font-size:13px;font-weight:bold">🚬 Log Half Cig</button>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:10px;color:#7a6a30;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px">Reduction Roadmap</div>
+      <div class="cig-roadmap" id="cig-roadmap"></div>
+      <div style="font-size:9px;color:#4a3a20;margin-top:8px;text-align:center">2→1.5→1→0.5→🚭 by end of April</div>
+    </div>
+    <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:#3a5a6a" id="cig-start-lbl"></div>
+      <button id="cig-restart" style="font-size:10px;color:#3a6a8a;background:none;border:1px solid rgba(79,195,247,.2);border-radius:8px;padding:5px 9px">Restart</button>
+    </div>
+  </div>
+
+  <!-- CAFFEINE -->
+
+  <div class="panel" id="panel-caffeine">
+    <div id="caff-banner" style="margin-bottom:14px"></div>
+    <div class="card" id="caff-card" style="margin-bottom:12px;padding:18px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div style="font-size:15px;font-weight:bold;color:#4ade80" id="caff-title">Today's Caffeine</div><div style="font-size:10px;color:#3a6a4a;margin-top:1px">Soft limit 400mg · +9% Whoop boost</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:bold;color:#4ade80" id="caff-total">0<span style="font-size:12px;color:#3a6a4a">mg</span></div><div style="font-size:10px;color:#3a6a4a" id="caff-servings">0 servings</div></div>
+      </div>
+      <div style="height:8px;background:rgba(74,222,128,.1);border-radius:4px;margin-bottom:14px"><div id="caff-bar" style="height:100%;border-radius:4px;background:#4ade80;width:0%;transition:width .4s"></div></div>
+      <div class="caff-grid" id="caff-grid"></div>
+    </div>
+    <div id="caff-log-card" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em">Today's Log</div>
+        <button id="caff-clear" style="font-size:10px;color:#3a5a6a;background:none;border:1px solid rgba(79,195,247,.2);border-radius:7px;padding:3px 8px">Clear</button>
+      </div>
+      <div id="caff-log-entries" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+    <div class="info-card"><div style="color:#4ade80;font-weight:bold;margin-bottom:4px">Your Whoop data ☕</div>Caffeine gives you a <span style="color:#4ade80">+9% recovery boost</span> — well above the +1% average. Last serve before 1pm = 9+ hrs clearance before 10pm bedtime.</div>
+  </div>
+
+  <!-- SUPPS -->
+
+  <div class="panel" id="panel-supps">
+    <div style="border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:rgba(129,140,248,.06);border:1.5px solid rgba(129,140,248,.2)" id="supp-header">
+      <div><div style="font-size:14px;font-weight:bold;color:#818cf8" id="supp-title">Daily Supplements</div><div style="font-size:10px;color:#4a4a8a;margin-top:2px">Tap each one when you've taken it</div></div>
+      <div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#818cf8" id="supp-count">0<span style="font-size:13px;color:#4a4a8a">/6</span></div></div>
+    </div>
+    <div class="prog-bar-wrap" id="supp-prog"></div>
+    <div id="supp-cards"></div>
+    <div id="mag-note" style="display:none;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:10px;padding:9px 13px;font-size:10px;color:#34d399;text-align:center"></div>
+  </div>
+
+  <div class="footer">Pale yellow = hydrated · Dark yellow = drink now · Clear = over-hydrated</div>
+</div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────────────────────────
+const DAY_TYPES=[
+  {id:"rest",label:"Rest Day",emoji:"😴",target:3000,seeking:1,bulk:0,note:"Baseline maintenance"},
+  {id:"strength",label:"Strength Training",emoji:"🏋️",target:3500,seeking:2,bulk:0,note:"A/C gym — moderate sweat"},
+  {id:"hiit",label:"Norwegian 4x4 HIIT",emoji:"🔥",target:4000,seeking:2,bulk:0,note:"High intensity — front-load before session"},
+  {id:"walk_golf",label:"Walking Golf",emoji:"⛳",target:4750,seeking:2,bulk:0,note:"4+ hrs outdoors — start hydrated night before"},
+  {id:"cart_golf",label:"Cart Golf + Beers",emoji:"🍺",target:5000,seeking:2,bulk:0,note:"+250ml water per standard drink"},
+  {id:"gym_cart_golf",label:"Gym + Cart Golf",emoji:"🏋️⛳",target:5250,seeking:2,bulk:1,note:"Double session — front-load electrolytes"},
+  {id:"bike",label:"Bike + Training",emoji:"🚴",target:4250,seeking:2,bulk:1,note:"Double activity — highest electrolyte day"},
+  {id:"ruck",label:"Ruck",emoji:"🎒",target:5250,seeking:2,bulk:1,note:"Weighted outdoor carry — peak sweat demand"},
+];
+const CIG_PLAN=[2,1.5,1,0.5,0];
+const CAFF_SOURCES=[
+  {id:"espresso",label:"Espresso / Coffee",emoji:"☕",mg:80,mag:0,sodium:0,potassium:0},
+  {id:"preworkout",label:"Pre-workout",emoji:"💪",mg:200,mag:50,sodium:50,potassium:100},
+  {id:"energy",label:"Energy Drink",emoji:"⚡",mg:150,mag:0,sodium:0,potassium:0},
+  {id:"tea",label:"Tea",emoji:"🍵",mg:40,mag:0,sodium:0,potassium:0},
+];
+const ELEC_PRODUCTS=[
+  {id:"seeking",label:"Seeking Health",sub:"Optimal Electrolyte — restock on order",color:"#c084fc",rgb:"192,132,252",outOfStock:true,
+   minerals:["Potassium","Magnesium","Sodium"],mfn:(s)=>[s*500,s*125,s*150],hint:"Take with breakfast or pre-training · Avoid close to bed"},
+  {id:"bulk",label:"Bulk Nutrients Caps",sub:"Electrolyte Caps · 4 caps = 1 serve",color:"#fb923c",rgb:"251,146,60",outOfStock:false,
+   minerals:["Potassium","Magnesium","Sodium"],mfn:(s)=>[Math.round(s*139.5),s*127,s*113],hint:"4 caps per serve · also contains 88.8mg calcium"},
+  {id:"salts",label:"Bulk Nutrients Hydration Salts",sub:"Powder · ~1,000mg sodium per serve",color:"#38bdf8",rgb:"56,189,248",outOfStock:false,
+   minerals:["Sodium","Potassium","Magnesium"],mfn:(s)=>[s*1000,0,0],hint:"High-sweat outdoor sessions only — use with plenty of water"},
+];
+const SUPPS=[
+  {id:"omega",label:"Nordic Naturals Ultimate Omega",emoji:"🐟",dose:"2 softgels · 1280mg Omega-3",sub:"Heart, brain & immune health",color:"56,189,248",tip:"Take with a meal containing fat for best absorption"},
+  {id:"theanineAM",label:"L-Theanine · Morning",emoji:"🧘",dose:"1 cap · 200mg",sub:"Calm focus — pairs with morning coffee",color:"167,139,250",tip:"Take with your morning caffeine for smooth, jitter-free energy"},
+  {id:"theaninePM",label:"L-Theanine · Night",emoji:"🌙",dose:"1 cap · 200mg",sub:"Wind down · stress relief",color:"167,139,250",tip:"Take after dinner to ease into wind-down mode"},
+  {id:"vitb",label:"Herbs of Gold B Complete",emoji:"⚡",dose:"1 tablet · sustained release 8hrs",sub:"Energy, mood & nervous system",color:"251,191,36",tip:"Take with food in the morning for all-day energy"},
+  {id:"creatine",label:"Creatine Monohydrate",emoji:"💪",dose:"8g",sub:"Strength, power & muscle recovery",color:"251,146,60",tip:"Timing doesn't matter much — consistency is what counts"},
+  {id:"mag",label:"Magnesium Glycinate",emoji:"😴",dose:"1 or 2 caps",sub:"Sleep, recovery & muscle function",color:"52,211,153",tip:"Best taken at night — supports sleep quality and recovery",isMag:true},
+];
+
+// ─── State ───────────────────────────────────────────────────────────────────
+const today=new Date().toDateString();
+const getWeekKey=()=>{const d=new Date(),j=new Date(d.getFullYear(),0,1),w=Math.ceil(((d-j)/86400000+j.getDay()+1)/7);return `${d.getFullYear()}-W${w}`;};
+const weekKey=getWeekKey();
+const ld=(k,def)=>{try{const v=localStorage.getItem(k+'_'+today);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sd=(k,v)=>{try{localStorage.setItem(k+'_'+today,JSON.stringify(v));}catch{}};
+const ldw=(k,def)=>{try{const v=localStorage.getItem(k+'_'+weekKey);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sdw=(k,v)=>{try{localStorage.setItem(k+'_'+weekKey,JSON.stringify(v));}catch{}};
+const ldg=(k,def)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sdg=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+
+let state={
+  water:ld('water',0),
+  dayTypeId:ld('daytype','rest'),
+  seeking:ld('seeking',0),
+  bulk:ld('bulk',0),
+  salts:ld('salts',0),
+  sessionDrinks:ld('sessionDrinks',0),
+  weekDrinks:ldw('weekDrinks',0),
+  cigs:ld('cigs',0),
+  cigStartDate:ldg('cigStartDate',new Date().toISOString().slice(0,10)),
+  caffLog:ld('caffLog',[]),
+  suppOmega:ld('suppOmega',false),
+  suppTheanineAM:ld('suppTheanineAM',false),
+  suppTheaninePM:ld('suppTheaninePM',false),
+  suppVitB:ld('suppVitB',false),
+  suppMagDose:ld('suppMagDose',0),
+  suppCreatine:ld('suppCreatine',false),
+  activeTab:'water',
+};
+
+function saveAll(){
+  sd('water',state.water);sd('daytype',state.dayTypeId);
+  sd('seeking',state.seeking);sd('bulk',state.bulk);sd('salts',state.salts);
+  sd('sessionDrinks',state.sessionDrinks);sdw('weekDrinks',state.weekDrinks);
+  sd('cigs',state.cigs);sdg('cigStartDate',state.cigStartDate);
+  sd('caffLog',state.caffLog);
+  sd('suppOmega',state.suppOmega);sd('suppTheanineAM',state.suppTheanineAM);
+  sd('suppTheaninePM',state.suppTheaninePM);sd('suppVitB',state.suppVitB);
+  sd('suppMagDose',state.suppMagDose);sd('suppCreatine',state.suppCreatine);
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const fml=ml=>ml>=1000?`${(ml/1000).toFixed(1)}L`:`${ml}ml`;
+const sc=pct=>{if(pct>=100)return'#00e5a0';if(pct>=60)return'#4fc3f7';if(pct>=30)return'#ffd54f';return'#ef5350';};
+const us=pct=>{if(pct>=100)return{l:'Well hydrated 💪',c:'#00e5a0'};if(pct>=60)return{l:'Getting there 👍',c:'#4fc3f7'};if(pct>=30)return{l:'Drink up 🚰',c:'#ffd54f'};return{l:'Dehydrated! 🚨',c:'#ef5350'};};
+const now=()=>new Date();
+const getAppWeek=s=>{if(!s)return 0;const diff=Math.floor((new Date()-new Date(s))/86400000);return Math.min(Math.floor(diff/7),CIG_PLAN.length-1);};
+const fmt05=v=>v%1===0?String(v):v.toFixed(1);
+
+// ─── Init Static UI ──────────────────────────────────────────────────────────
+document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+
+// Day dropdown
+const dd=document.getElementById('day-dropdown');
+DAY_TYPES.forEach(d=>{
+  const b=document.createElement('button');
+  b.className='day-option'+(d.id===state.dayTypeId?' active':'');
+  b.dataset.id=d.id;
+  b.innerHTML=`<span>${d.emoji} ${d.label}</span><span class="ml">${fml(d.target)}</span>`;
+  b.onclick=()=>{state.dayTypeId=d.id;saveAll();setShowDD(false);render();};
+  dd.appendChild(b);
+});
+let ddOpen=false;
+function setShowDD(v){ddOpen=v;dd.classList.toggle('open',v);}
+document.getElementById('day-btn').onclick=()=>setShowDD(!ddOpen);
+document.addEventListener('click',e=>{if(!e.target.closest('.day-selector'))setShowDD(false);});
+
+// Tabs
+const TABS=[{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'supps',emoji:'💊',title:'Supps'}];
+const tabsEl=document.getElementById('tabs');
+TABS.forEach(t=>{
+  const b=document.createElement('button');
+  b.className='tab'+(t.id===state.activeTab?' active':'');
+  b.id='tab-'+t.id;
+  b.innerHTML=`<span class="tab-icon">${t.emoji}</span><span>${t.title}</span>`;
+  b.onclick=()=>{state.activeTab=t.id;TABS.forEach(x=>{document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');document.getElementById('panel-'+x.id).className='panel'+(x.id===t.id?' active':'');});};
+  tabsEl.appendChild(b);
+});
+
+// Water buttons
+document.getElementById('tap-water').onclick=()=>{state.water+=450;saveAll();render();};
+document.getElementById('undo-water').onclick=()=>{state.water=Math.max(0,state.water-450);saveAll();render();};
+document.getElementById('reset-btn').onclick=()=>{
+  if(!confirm('Reset all of today\'s tracking?'))return;
+  state.water=0;state.seeking=0;state.bulk=0;state.salts=0;
+  state.sessionDrinks=0;state.cigs=0;state.caffLog=[];
+  state.suppOmega=false;state.suppTheanineAM=false;state.suppTheaninePM=false;
+  state.suppVitB=false;state.suppMagDose=0;state.suppCreatine=false;
+  saveAll();render();
+};
+
+// Drinks
+let drinkWarnTimer=null;
+function showDrinkWarn(msg){
+  const el=document.getElementById('drink-warning');
+  el.textContent=msg;el.style.display='block';
+  if(drinkWarnTimer)clearTimeout(drinkWarnTimer);
+  drinkWarnTimer=setTimeout(()=>{el.style.display='none';},3500);
+}
+function addDrink(amt){
+  const h=now().getHours();
+  if(h>=20){showDrinkWarn('⏰ It\'s past 8pm — no more drinks tonight!');return;}
+  if(state.sessionDrinks>=4){showDrinkWarn('🚫 4 std drink session limit reached.');return;}
+  if(state.weekDrinks>=10){showDrinkWarn('🚫 10 std drink weekly limit reached.');return;}
+  state.sessionDrinks=Math.round((state.sessionDrinks+amt)*10)/10;
+  state.weekDrinks=Math.round((state.weekDrinks+amt)*10)/10;
+  state.water+=Math.round(250*amt);
+  saveAll();render();
+}
+document.getElementById('drink-minus').onclick=()=>{
+  if(state.sessionDrinks<=0)return;
+  const r=state.sessionDrinks>=1?1:state.sessionDrinks;
+  state.sessionDrinks=Math.round(Math.max(0,state.sessionDrinks-r)*10)/10;
+  state.weekDrinks=Math.round(Math.max(0,state.weekDrinks-r)*10)/10;
+  state.water=Math.max(0,state.water-Math.round(250*r));
+  saveAll();render();
+};
+document.getElementById('drink-1').onclick=()=>addDrink(1);
+document.getElementById('drink-15').onclick=()=>addDrink(1.5);
+
+// Smokes
+document.getElementById('cig-minus').onclick=()=>{state.cigs=Math.max(0,Math.round((state.cigs-0.5)*10)/10);saveAll();render();};
+document.getElementById('cig-plus').onclick=()=>{state.cigs=Math.round((state.cigs+0.5)*10)/10;saveAll();render();};
+document.getElementById('cig-restart').onclick=()=>{if(confirm('Restart the reduction plan from today?')){state.cigStartDate=new Date().toISOString().slice(0,10);state.cigs=0;saveAll();render();}};
+
+// Caffeine
+document.getElementById('caff-clear').onclick=()=>{if(confirm('Clear caffeine log?')){state.caffLog=[];saveAll();render();}};
+
+// ─── Render Electrolytes ──────────────────────────────────────────────────────
+function renderElec(){
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
+  document.getElementById('elec-note').textContent=`${dt.emoji} ${dt.note}`;
+  const scoops={seeking:state.seeking,bulk:state.bulk,salts:state.salts};
+  const targets={seeking:dt.seeking,bulk:Math.max(dt.bulk,1),salts:Math.max(dt.bulk,1)};
+  const optional={seeking:false,bulk:dt.bulk===0,salts:dt.bulk===0};
+  const container=document.getElementById('elec-cards');
+  container.innerHTML='';
+  ELEC_PRODUCTS.forEach(ep=>{
+    const s=scoops[ep.id],t=targets[ep.id],done=s>=t,opt=optional[ep.id];
+    const mv=ep.mfn(s);
+    const div=document.createElement('div');
+    div.className='card';
+    div.style.cssText=`background:${done?`rgba(${ep.rgb},.12)`:`rgba(${ep.rgb},.05)`};border:1.5px solid rgba(${ep.rgb},${done?.5:.22});margin-bottom:12px`;
+    let mHTML=mv.some(v=>v>0)?`<div class="minerals">${ep.minerals.map((m,i)=>`<div class="mineral"><div class="mineral-val" style="color:${ep.color}">${mv[i]}mg</div><div class="mineral-lbl">${m}</div></div>`).join('')}</div>`:'';
+    let segs=Array.from({length:t},(_,i)=>`<div class="progress-seg" style="background:${i<s?ep.color:`rgba(${ep.rgb},.12)`}"></div>`).join('');
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div class="card-title" style="color:${ep.color}">${ep.label}</div>
+          <div class="card-sub">${ep.sub}</div>
+          ${ep.outOfStock?'<div style="font-size:9px;color:#ef9090;margin-top:3px;background:rgba(239,83,80,.12);border:1px solid rgba(239,83,80,.25);border-radius:5px;padding:2px 6px;display:inline-block">⚠️ Out of stock — restock ordered</div>':''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:${ep.color}">${s}/${t} serve${t!==1?'s':''}</div>
+          ${opt&&!done?'<div style="font-size:9px;color:#7a5a3a;margin-top:2px">optional today</div>':''}
+          ${done?'<div style="font-size:10px;color:#00e5a0;margin-top:1px">✓ Done!</div>':''}
+        </div>
+      </div>
+      <div class="progress-row">${segs}</div>
+      ${s>0?mHTML:''}
+      <div class="add-row">
+        <button class="add-minus" style="border:1px solid rgba(${ep.rgb},.28);background:rgba(${ep.rgb},.07);color:${ep.color}" data-ep="${ep.id}" data-act="minus">−</button>
+        <button class="add-plus" style="border:1px solid rgba(${ep.rgb},.45);background:rgba(${ep.rgb},.16);color:${ep.color}" data-ep="${ep.id}" data-act="plus">+ Add Serve</button>
+      </div>
+      <div class="card-hint" style="color:rgba(${ep.rgb},.45)">${ep.hint}</div>
+    `;
+    container.appendChild(div);
+  });
+  container.querySelectorAll('button[data-ep]').forEach(b=>{
+    b.onclick=()=>{
+      const id=b.dataset.ep,act=b.dataset.act;
+      if(act==='minus')state[id]=Math.max(0,state[id]-1);
+      else state[id]++;
+      saveAll();renderElec();renderTotals();
+    };
+  });
+  renderTotals();
+}
+
+function renderTotals(){
+  const pw=state.caffLog.filter(e=>e.sourceId==='preworkout').length;
+  const totals=[
+    {label:'Potassium',val:(state.seeking*500)+Math.round(state.bulk*139.5)+(pw*100),target:3000,color:'#a78bfa'},
+    {label:'Sodium',val:(state.seeking*150)+(state.bulk*113)+(state.salts*1000)+(pw*50),target:3000,color:'#fb923c'},
+    {label:'Magnesium',val:(state.seeking*125)+(state.bulk*127)+(pw*50)+(state.suppMagDose*150),target:400,color:'#34d399'},
+  ];
+  const g=document.getElementById('totals-grid');
+  g.innerHTML=totals.map(m=>{
+    const p=Math.min((m.val/m.target)*100,100);
+    return `<div class="total-item"><div class="total-lbl">${m.label}</div><div class="total-val" style="color:${p>=100?'#00e5a0':m.color}">${m.val}mg</div><div class="mini-bar"><div class="mini-fill" style="width:${p}%;background:${p>=100?'#00e5a0':m.color}"></div></div></div>`;
+  }).join('');
+}
+
+// ─── Render Caffeine ──────────────────────────────────────────────────────────
+function renderCaff(){
+  const h=now().getHours(),mins=now().getMinutes();
+  const pastCut=h>=13,minsLeft=pastCut?0:(13-h)*60-mins;
+  const totalMg=state.caffLog.reduce((s,e)=>s+e.mg,0);
+  const over=totalMg>400;
+  const banner=document.getElementById('caff-banner');
+  if(pastCut){banner.innerHTML=`<div style="background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.35);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:13px;color:#ef5350;font-weight:bold">⏰ 1pm cutoff passed</div><div style="font-size:10px;color:#9a4a48;margin-top:2px">No more caffeine — 9+ hrs to clear before bed 👍</div></div>`;}
+  else if(minsLeft<=60){banner.innerHTML=`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:12px;color:#fbbf24">⚠️ Cutoff in ${minsLeft}m — last call for caffeine</div></div>`;}
+  else{banner.innerHTML=`<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.18);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:11px;color:#4ade80">✓ Cutoff at 1pm · ${Math.floor(minsLeft/60)}h ${minsLeft%60}m remaining</div></div>`;}
+  document.getElementById('caff-total').innerHTML=`${totalMg}<span style="font-size:12px;color:#3a6a4a">mg</span>`;
+  document.getElementById('caff-total').style.color=over?'#ef5350':'#4ade80';
+  document.getElementById('caff-servings').textContent=`${state.caffLog.length} serving${state.caffLog.length!==1?'s':''}`;
+  document.getElementById('caff-bar').style.width=Math.min((totalMg/400)*100,100)+'%';
+  document.getElementById('caff-bar').style.background=over?'#ef5350':'#4ade80';
+  const grid=document.getElementById('caff-grid');
+  grid.innerHTML='';
+  CAFF_SOURCES.forEach(src=>{
+    const b=document.createElement('button');
+    b.className='caff-src';
+    b.disabled=pastCut;
+    b.style.cssText=`border:1px solid rgba(74,222,128,${pastCut?.1:.35});background:rgba(74,222,128,${pastCut?.03:.1});color:${pastCut?'#2a4a3a':'#4ade80'};cursor:${pastCut?'not-allowed':'pointer'}`;
+    b.innerHTML=`<span class="src-icon">${src.emoji}</span><span class="src-lbl">${src.label}</span><span class="src-mg" style="color:${pastCut?'#2a4a3a':'#3a8a5a'}">+${src.mg}mg${src.mag>0?' · +450ml 💧':''}</span>`;
+    b.onclick=()=>{if(pastCut)return;state.caffLog.push({sourceId:src.id,mg:src.mg,time:new Date().toTimeString().slice(0,5)});if(src.id==='preworkout')state.water+=450;saveAll();renderCaff();renderTotals();renderWater();};
+    grid.appendChild(b);
+  });
+  const logCard=document.getElementById('caff-log-card');
+  const logEntries=document.getElementById('caff-log-entries');
+  if(state.caffLog.length>0){
+    logCard.style.display='block';
+    logEntries.innerHTML=[...state.caffLog].reverse().map(e=>{
+      const src=CAFF_SOURCES.find(s=>s.id===e.sourceId);
+      return `<div class="log-entry"><span style="font-size:13px">${src?.emoji} <span style="font-size:12px;color:#b0d0e8">${src?.label}</span></span><div style="display:flex;gap:10px;align-items:center"><div style="text-align:right"><div style="font-size:12px;color:#4ade80;font-weight:bold">+${e.mg}mg</div>${src?.mag>0?`<div style="font-size:9px;color:#c084fc">+${src.mag}mg Mg · +${src.potassium}mg K</div>`:''}</div><span style="font-size:10px;color:#3a5a6a">${e.time}</span></div></div>`;
+    }).join('');
+  } else {logCard.style.display='none';}
+}
+
+// ─── Render Supps ─────────────────────────────────────────────────────────────
+function renderSupps(){
+  const vals={omega:state.suppOmega,theanineAM:state.suppTheanineAM,theaninePM:state.suppTheaninePM,vitb:state.suppVitB,creatine:state.suppCreatine,mag:state.suppMagDose>0};
+  const done=Object.values(vals).filter(Boolean).length;
+  const all=done===6;
+  document.getElementById('supp-title').textContent=all?'All done today! 🎉':'Daily Supplements';
+  document.getElementById('supp-count').innerHTML=`${done}<span style="font-size:13px;color:#4a4a8a">/6</span>`;
+  document.getElementById('supp-count').style.color=all?'#00e5a0':'#818cf8';
+  document.getElementById('supp-header').style.background=all?'rgba(129,140,248,.12)':'rgba(129,140,248,.06)';
+  document.getElementById('supp-header').style.borderColor=`rgba(129,140,248,${all?.45:.2})`;
+  // Progress bar
+  const prog=document.getElementById('supp-prog');
+  const keys=['omega','theanineAM','theaninePM','vitb','creatine','mag'];
+  prog.innerHTML=keys.map(k=>`<div class="prog-seg" style="background:${vals[k]?(all?'#00e5a0':'#818cf8'):'rgba(129,140,248,.12)'}"></div>`).join('');
+  // Cards
+  const cards=document.getElementById('supp-cards');
+  cards.innerHTML='';
+  SUPPS.forEach(s=>{
+    const taken=s.isMag?state.suppMagDose>0:state[`supp${s.id.charAt(0).toUpperCase()+s.id.slice(1)}`];
+    const div=document.createElement('div');
+    div.className='supp-card';
+    div.style.cssText=`background:${taken?`rgba(${s.color},.12)`:`rgba(${s.color},.04)`};border:1.5px solid rgba(${s.color},${taken?.45:.18})`;
+    const dose=s.isMag?(state.suppMagDose===0?'1 cap (150mg) or 2 caps (300mg)':state.suppMagDose===1?'✓ 1 cap · 150mg':'✓ 2 caps · 300mg'):s.dose;
+    div.innerHTML=`
+      <div class="supp-inner">
+        <div class="supp-info">
+          <div class="supp-name-row"><span style="font-size:18px">${s.emoji}</span><span style="font-size:13px;font-weight:bold;color:rgba(${s.color},1)">${s.label}</span></div>
+          <div class="supp-dose">${dose}</div>
+          <div class="supp-sub">${s.sub}</div>
+        </div>
+        ${!s.isMag?`<button class="supp-toggle" data-sid="${s.id}" style="border:1.5px solid rgba(${s.color},${taken?.6:.3});background:${taken?`rgba(${s.color},.25)`:`rgba(${s.color},.07)`};color:rgba(${s.color},1)">${taken?'✓':'○'}</button>`:''}
+      </div>
+      ${s.isMag?`<div class="mag-btns"><button class="mag-btn" data-mag="1" style="border:1.5px solid rgba(${s.color},${state.suppMagDose===1?.6:.25});background:rgba(${s.color},${state.suppMagDose===1?.2:.05});color:rgba(${s.color},1)">${state.suppMagDose===1?'✓ ':''}1 cap · 150mg</button><button class="mag-btn" data-mag="2" style="border:1.5px solid rgba(${s.color},${state.suppMagDose===2?.6:.25});background:rgba(${s.color},${state.suppMagDose===2?.2:.05});color:rgba(${s.color},1)">${state.suppMagDose===2?'✓ ':''}2 caps · 300mg</button></div>`:''}
+      <div class="supp-tip" style="color:rgba(${s.color},.4)">💡 ${s.tip}</div>
+    `;
+    cards.appendChild(div);
+  });
+  cards.querySelectorAll('.supp-toggle').forEach(b=>{
+    b.onclick=()=>{
+      const sid=b.dataset.sid;
+      const key=`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
+      state[key]=!state[key];saveAll();renderSupps();
+    };
+  });
+  cards.querySelectorAll('.mag-btn').forEach(b=>{
+    b.onclick=()=>{const v=parseInt(b.dataset.mag);state.suppMagDose=state.suppMagDose===v?0:v;saveAll();renderSupps();renderTotals();};
+  });
+  const mn=document.getElementById('mag-note');
+  if(state.suppMagDose>0){mn.style.display='block';mn.textContent=`+${state.suppMagDose*150}mg magnesium from Mag Glycinate counted in electrolyte totals`;}
+  else mn.style.display='none';
+}
+
+// ─── Render Water ─────────────────────────────────────────────────────────────
+function renderWater(){
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
+  const target=dt.target+(state.sessionDrinks*250);
+  const pct=Math.min((state.water/target)*100,100);
+  const waveY=100-pct;
+  const color=sc(pct);
+  // SVG
+  document.getElementById('wg-stop1').setAttribute('stop-color',color);
+  document.getElementById('wg-stop2').setAttribute('stop-color',color);
+  document.getElementById('wave-rect').setAttribute('y',waveY*1.76);
+  document.getElementById('wave-rect').setAttribute('fill','url(#wg)');
+  document.getElementById('wave-path').setAttribute('d',`M0,${waveY*1.76} Q50,${waveY*1.76-8} 100,${waveY*1.76} Q150,${waveY*1.76+8} 200,${waveY*1.76} L200,200 L0,200 Z`);
+  document.getElementById('wave-path').setAttribute('fill',color);
+  document.getElementById('arc').setAttribute('stroke',color);
+  document.getElementById('arc').setAttribute('stroke-dasharray',`${(pct/100)*553} 553`);
+  document.getElementById('svg-intake').textContent=fml(state.water);
+  document.getElementById('svg-target').textContent=`of ${fml(target)}`;
+  document.getElementById('svg-pct').textContent=`${Math.round(pct)}%`;
+  document.getElementById('svg-pct').setAttribute('fill',color);
+  // Status
+  const s=us(pct);
+  const pill=document.getElementById('status-pill');
+  pill.textContent=s.l;pill.style.background=s.c+'16';pill.style.border=`1px solid ${s.c}38`;pill.style.color=s.c;
+  // Stats
+  const rem=Math.max(target-state.water,0);
+  const cups=Math.ceil(rem/450);
+  const remEl=document.getElementById('stat-remaining');
+  remEl.textContent=fml(rem);remEl.style.color=rem>0?'#ffd54f':'#00e5a0';
+  const cupEl=document.getElementById('stat-cups');
+  cupEl.textContent=rem>0?`${cups}×450ml`:'Done! ✓';cupEl.style.color=rem>0?'#4fc3f7':'#00e5a0';
+  document.getElementById('undo-water').disabled=state.water===0;
+  // Day label
+  document.getElementById('day-label').textContent=`${dt.emoji} ${dt.label}`;
+  document.querySelectorAll('.day-option').forEach(o=>o.classList.toggle('active',o.dataset.id===state.dayTypeId));
+}
+
+// ─── Render Drinks ────────────────────────────────────────────────────────────
+function renderDrinks(){
+  const h=now().getHours(),mins=now().getMinutes();
+  const pastCut=h>=20,minsLeft=pastCut?0:(20-h)*60-mins;
+  const blocked=pastCut||state.sessionDrinks>=4||state.weekDrinks>=10;
+  const banner=document.getElementById('drink-cutoff-banner');
+  if(pastCut)banner.innerHTML=`<div class="warning-banner" style="background:rgba(239,83,80,.12);border:1.5px solid rgba(239,83,80,.4)"><div style="font-size:14px;color:#ef5350;font-weight:bold">⏰ 8pm cutoff reached</div><div style="font-size:11px;color:#9a4a48;margin-top:2px">No more drinks tonight — 2hrs to wind down before bed.</div></div>`;
+  else if(minsLeft<=120)banner.innerHTML=`<div class="warning-banner" style="background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35)"><div style="font-size:12px;color:#fbbf24">⚠️ 8pm cutoff in ${Math.floor(minsLeft/60)}h ${minsLeft%60}m — wrap it up soon</div></div>`;
+  else banner.innerHTML='';
+  const sc2=document.getElementById('session-card');
+  sc2.style.background=state.sessionDrinks>=4?'rgba(239,83,80,.1)':'rgba(244,114,182,.07)';
+  sc2.style.border=`1.5px solid rgba(244,114,182,${state.sessionDrinks>=4?.5:.25})`;
+  document.getElementById('session-count').textContent=fmt05(state.sessionDrinks);
+  document.getElementById('session-count').style.color=state.sessionDrinks>=4?'#ef5350':'#f472b6';
+  // Dots
+  const dots=document.getElementById('drink-dots');
+  dots.innerHTML=Array.from({length:4},(_,i)=>`<div class="drink-dot" style="background:${i<state.sessionDrinks?(state.sessionDrinks>=4?'#ef5350':'#f472b6'):'rgba(244,114,182,.12)'}"></div>`).join('');
+  // Buttons
+  const d1=document.getElementById('drink-1'),d15=document.getElementById('drink-15');
+  [d1,d15].forEach(b=>{b.style.border=`1px solid rgba(244,114,182,${blocked?.15:.5})`;b.style.background=`rgba(244,114,182,${blocked?.04:.18})`;b.style.color=blocked?'#5a3a4a':'#f472b6';b.style.cursor=blocked?'not-allowed':'pointer';});
+  if(blocked){d1.innerHTML=pastCut?'Cutoff':'Limit';d15.innerHTML=pastCut?'':'-';}
+  else{d1.innerHTML='+ 1 std<br><span style="font-size:10px;font-weight:normal">+250ml 💧</span>';d15.innerHTML='+ 1.5 std<br><span style="font-size:10px;font-weight:normal">+375ml 💧</span>';}
+  // Weekly
+  const wkLeft=Math.max(10-state.weekDrinks,0);
+  document.getElementById('week-count').innerHTML=`${fmt05(state.weekDrinks)} <span style="font-size:12px;color:#7a4a6a">/ 10</span>`;
+  document.getElementById('week-count').style.color=state.weekDrinks>=10?'#ef5350':'#f472b6';
+  document.getElementById('week-bar').style.width=Math.min((state.weekDrinks/10)*100,100)+'%';
+  document.getElementById('week-bar').style.background=state.weekDrinks>=10?'#ef5350':'#f472b6';
+  document.getElementById('week-remaining').textContent=wkLeft>0?`${fmt05(wkLeft)} drink${wkLeft!==1?'s':''} remaining this week`:'Weekly limit hit — well done holding the line 💪';
+}
+
+// ─── Render Smokes ────────────────────────────────────────────────────────────
+function renderSmokes(){
+  const appWeek=getAppWeek(state.cigStartDate);
+  const goal=CIG_PLAN[appWeek]??0;
+  const over=state.cigs>goal,done=goal===0;
+  document.getElementById('cig-week-lbl').textContent=`Reduction Plan · Week ${appWeek+1} of 5`;
+  const gd=document.getElementById('cig-goal-display');
+  if(done)gd.innerHTML='<div style="font-size:18px;font-weight:bold;color:#00e5a0">🎉 Quit achieved!</div>';
+  else gd.innerHTML=`<div style="font-size:28px;font-weight:bold;color:#fbbf24">${fmt05(goal)}</div><div style="font-size:11px;color:#9a7830">daily target this week</div>`;
+  const card=document.getElementById('cig-card');
+  card.style.background=over?'rgba(239,83,80,.1)':done&&state.cigs===0?'rgba(0,229,160,.08)':'rgba(251,191,36,.06)';
+  card.style.border=`1.5px solid ${over?'rgba(239,83,80,.4)':done&&state.cigs===0?'rgba(0,229,160,.35)':'rgba(251,191,36,.25)'}`;
+  document.getElementById('cig-title').textContent=done&&state.cigs===0?'Smoke-free today 🌟':'Today\'s Smokes';
+  document.getElementById('cig-title').style.color=over?'#ef5350':done&&state.cigs===0?'#00e5a0':'#fbbf24';
+  document.getElementById('cig-subtitle').textContent=done?'Keep it up — you\'ve quit!':`Goal: ${fmt05(goal)} or fewer`;
+  document.getElementById('cig-count').textContent=fmt05(state.cigs);
+  document.getElementById('cig-count').style.color=over?'#ef5350':'#fbbf24';
+  document.getElementById('cig-target-lbl').textContent=!done?`/ ${fmt05(goal)} target`:'';
+  const bw=document.getElementById('cig-bar-wrap');
+  bw.style.display=!done&&goal>0?'block':'none';
+  if(!done&&goal>0){
+    const p=Math.min((state.cigs/goal)*100,100);
+    document.getElementById('cig-bar').style.width=p+'%';
+    document.getElementById('cig-bar').style.background=over?'#ef5350':'#fbbf24';
+    const ol=document.getElementById('cig-over-lbl');
+    if(over){ol.style.display='block';ol.textContent=`+${fmt05(state.cigs-goal)} over target today`;}
+    else ol.style.display='none';
+  }
+  document.getElementById('cig-minus').disabled=state.cigs===0;
+  document.getElementById('cig-minus').style.color=state.cigs===0?'#4a3a10':'#fbbf24';
+  // Roadmap
+  const rm=document.getElementById('cig-roadmap');
+  rm.innerHTML=CIG_PLAN.map((g,i)=>{
+    const cur=i===appWeek,past=i<appWeek;
+    return `<div class="cig-cell"><div class="cig-box" style="background:${g===0?'rgba(0,229,160,.2)':cur?'rgba(251,191,36,.25)':past?'rgba(255,255,255,.1)':'rgba(255,255,255,.03)'};border:1px solid ${g===0?'rgba(0,229,160,.4)':cur?'rgba(251,191,36,.5)':'rgba(255,255,255,.07)'};font-weight:${cur?'bold':'normal'};color:${g===0?'#00e5a0':cur?'#fbbf24':past?'#5a7a5a':'#2a3a4a'}">${g===0?'🚭':fmt05(g)}</div><div class="cig-wlbl" style="color:${cur?'#7a6a30':'#2a3a4a'}">W${i+1}</div></div>`;
+  }).join('');
+  document.getElementById('cig-start-lbl').textContent=`Plan started: ${new Date(state.cigStartDate).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}`;
+}
+
+// ─── Main Render ──────────────────────────────────────────────────────────────
+function render(){
+  renderWater();
+  renderElec();
+  renderDrinks();
+  renderSmokes();
+  renderCaff();
+  renderSupps();
+}
+
+render();
+setInterval(()=>{renderDrinks();renderCaff();},60000);
+</script>
+
+</body>
+</html>

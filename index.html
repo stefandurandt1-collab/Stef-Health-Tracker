@@ -133,9 +133,15 @@ button:active{transform:scale(0.93)}
 
   <div class="tabs" id="tabs"></div>
 
+  <!-- BODY RECOMP -->
+
+  <div class="panel active" id="panel-body">
+    <div id="body-cards"></div>
+  </div>
+
   <!-- WATER -->
 
-  <div class="panel active" id="panel-water">
+  <div class="panel" id="panel-water">
     <div class="water-circle">
       <svg id="water-svg" width="185" height="185" viewBox="0 0 200 200">
         <defs>
@@ -365,6 +371,11 @@ const ldg=(k,def)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.par
 const sdg=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
 
 let state={
+  bodyWeight:ld('bodyWeight',0),
+  bodyFatPct:ld('bodyFatPct',0),
+  bodyCalDeficit:ld('bodyCalDeficit',false),
+  bodyProtein:ld('bodyProtein',false),
+  bodyFibre:ld('bodyFibre',false),
   water:ld('water',0),
   dayTypeId:ld('daytype','rest'),
   seeking:ld('seeking',0),
@@ -397,10 +408,12 @@ let state={
   habitStrengthMins:ldw('habitStrengthMins',0),
   habitZone13Mins:ldw('habitZone13Mins',0),
   habitZone45Mins:ldw('habitZone45Mins',0),
-  activeTab:'water',
+  activeTab:'body',
 };
 
 function saveAll(){
+  sd('bodyWeight',state.bodyWeight);sd('bodyFatPct',state.bodyFatPct);
+  sd('bodyCalDeficit',state.bodyCalDeficit);sd('bodyProtein',state.bodyProtein);sd('bodyFibre',state.bodyFibre);
   sd('water',state.water);sd('daytype',state.dayTypeId);
   sd('seeking',state.seeking);sd('bulk',state.bulk);sd('salts',state.salts);
   sd('sessionDrinks',state.sessionDrinks);sdw('weekDrinks',state.weekDrinks);
@@ -447,7 +460,7 @@ document.getElementById('day-btn').onclick=()=>setShowDD(!ddOpen);
 document.addEventListener('click',e=>{if(!e.target.closest('.day-selector'))setShowDD(false);});
 
 // Tabs
-const TABS=[{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'supps',emoji:'💊',title:'Supps'},{id:'oral',emoji:'🦷',title:'Oral'},{id:'habits',emoji:'🏃',title:'Habits'},{id:'screentime',emoji:'📱',title:'Screen'},{id:'history',emoji:'📅',title:'History'}];
+const TABS=[{id:'body',emoji:'⚖️',title:'Body'},{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'supps',emoji:'💊',title:'Supps'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'oral',emoji:'🦷',title:'Oral'},{id:'habits',emoji:'🏃',title:'Habits'},{id:'screentime',emoji:'📱',title:'Screen'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'history',emoji:'📅',title:'History'}];
 const tabsEl=document.getElementById('tabs');
 TABS.forEach(t=>{
   const b=document.createElement('button');
@@ -463,6 +476,7 @@ document.getElementById('tap-water').onclick=()=>{state.water+=450;saveAll();ren
 document.getElementById('undo-water').onclick=()=>{state.water=Math.max(0,state.water-450);saveAll();render();};
 document.getElementById('reset-btn').onclick=()=>{
   if(!confirm('Reset all of today\'s tracking?'))return;
+  state.bodyCalDeficit=false;state.bodyProtein=false;state.bodyFibre=false;
   state.water=0;state.seeking=0;state.bulk=0;state.salts=0;
   state.sessionDrinks=0;state.cigs=0;state.caffLog=[];
   state.suppOmega=false;state.suppTheanineAM=false;state.suppTheaninePM=false;
@@ -574,15 +588,21 @@ function renderElec(){
 }
 
 function renderTotals(){
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
   const pw=state.caffLog.filter(e=>e.sourceId==='preworkout').length;
   const suppNa=(state.seeking*150)+(state.bulk*113)+(state.salts*1014)+(pw*50);
   const suppK=(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200)+(pw*100);
   const suppMg=(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(pw*50)+(state.suppMag?150:0);
 
+  // Dynamic targets based on day type recommended intake
+  const tgtK=Math.max((dt.seeking*500)+Math.round(dt.bulk*139.5)+(dt.salts*200),1);
+  const tgtNa=Math.max((dt.seeking*150)+(dt.bulk*113)+(dt.salts*1014),1);
+  const tgtMg=Math.max((dt.seeking*125)+(dt.bulk*127)+(dt.salts*60)+150,1);
+
   const totals=[
-    {label:'Potassium',val:suppK,target:3000,color:'#a78bfa'},
-    {label:'Sodium',val:suppNa,target:3000,color:'#fb923c'},
-    {label:'Magnesium',val:suppMg,target:400,color:'#34d399'},
+    {label:'Potassium',val:suppK,target:tgtK,color:'#a78bfa'},
+    {label:'Sodium',val:suppNa,target:tgtNa,color:'#fb923c'},
+    {label:'Magnesium',val:suppMg,target:tgtMg,color:'#34d399'},
   ];
   const g=document.getElementById('totals-grid');
   g.innerHTML=totals.map(m=>{
@@ -939,28 +959,69 @@ function buildShareText(){
   const caffMg=state.caffLog.reduce((s,e)=>s+e.mg,0);
   const suppsDone=[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag,state.suppFinasteride].filter(Boolean).length;
   const dateStr=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+  const adj=state.bodyWeight&&state.bodyFatPct?calcDexaAdjusted(state.bodyWeight,state.bodyFatPct):null;
+  const lbs=state.bodyWeight?(state.bodyWeight*2.2046).toFixed(1):null;
+  const proteinGoal=state.bodyWeight?Math.round(state.bodyWeight*2.2046):null;
+  const daysLeft=Math.max(0,Math.ceil((new Date('2026-05-01')-new Date())/(1000*60*60*24)));
+  const currentDexaBf=adj?adj.bf:null;
+  const targetWeightAtGoal=adj?Math.round(adj.lean/(1-15/100)*10)/10:null;
+  const fatToLose=adj?Math.max(0,(adj.weight-(targetWeightAtGoal||0))).toFixed(1):null;
   return [
     `📊 Stef's Health Log — ${dateStr}`,
     `🏷️ Day type: ${dt.label}`,
     ``,
-    `💧 Hydration: ${pct}% (${fml(state.water)} / ${fml(target)})`,
-    `☕ Caffeine: ${caffMg}mg`,
-    `💊 Supps: ${suppsDone}/7`,
-    `🚬 Smokes: ${state.cigs>0?fmt05(state.cigs)+' today':'None'}`,
-    `🍻 Drinks: ${fmt05(state.sessionDrinks)} today / ${fmt05(state.weekDrinks)} this week`,
+    `━━━ ⚖️ BODY COMPOSITION ━━━`,
+    `  Hume weight:    ${state.bodyWeight?state.bodyWeight+'kg ('+lbs+'lbs)':'not logged'}`,
+    `  DEXA-adj weight: ${adj?adj.weight+'kg':'—'}`,
+    `  Hume BF%:       ${state.bodyFatPct?state.bodyFatPct+'%':'not logged'}`,
+    `  DEXA-adj BF%:   ${adj?adj.bf+'%':'—'}`,
+    `  Lean mass:      ${adj?adj.lean+'kg':'—'}`,
+    `  Fat mass:       ${adj?adj.fat+'kg':'—'}`,
     ``,
-    `⚡ Electrolytes (supps only):`,
-    `  Potassium: ${suppK}mg`,
-    `  Sodium: ${suppNa}mg (est. total ~${suppNa+2200}mg incl. food)`,
-    `  Magnesium: ${suppMg}mg`,
+    `  🎯 May 1 DEXA goal: 15% BF · ${daysLeft} days away`,
+    `  Fat still to lose: ${fatToLose?fatToLose+'kg':'—'}`,
+    `  Target weight at 15%: ${targetWeightAtGoal?'~'+targetWeightAtGoal+'kg':'—'}`,
+    `  Hume targets: ~102.5-103kg · ~12.5-13% BF`,
     ``,
-    `🚶 Steps: ${state.dailySteps.toLocaleString()} / 12,000 goal`,
-    `📱 Screen time: ${state.screenTimeMins}min / 30min goal`,
-    `🦷 Oral: AM ${[state.oralBrushAM,state.oralMouthwashAM].filter(Boolean).length}/2 · PM ${[state.oralBrushPM,state.oralFlossPM,state.oralPickstersPM,state.oralMouthwashPM].filter(Boolean).length}/4`,
-    `🏃 Habits: ${state.habitMeditation?'✓':'✗'} Meditation · ${state.habitPliability?'✓':'✗'} Pliability`,
-    `  Strength: ${state.habitStrengthMins}min this week / 150min goal`,
-    `  Zone 1-3: ${state.habitZone13Mins}min this week / 150min goal`,
-    `  Zone 4-5: ${state.habitZone45Mins}min this week / 50min goal`,
+    `  DEXA History:`,
+    `    Dec 2019: 95.6kg · 15.1% ← goal reference`,
+    `    Jun 2024: 117.4kg · 24.9% ← peak`,
+    `    Nov 2025: 106.4kg · 18.6% ← last DEXA`,
+    ``,
+    `  Daily nutrition:`,
+    `    Calorie deficit: ${state.bodyCalDeficit?'✓ hit':'✗ missed'}`,
+    `    Protein: ${state.bodyProtein?'✓ hit':'✗ missed'}${proteinGoal?' ('+proteinGoal+'g target · 1g/lb)':''}`,
+    `    Fibre 45g: ${state.bodyFibre?'✓ hit':'✗ missed'}`,
+    ``,
+    `━━━ 🍻 DRINKS ━━━`,
+    `  Today: ${fmt05(state.sessionDrinks)} std drinks`,
+    `  This week: ${fmt05(state.weekDrinks)} / 10 std drinks`,
+    ``,
+    `━━━ 🏃 EXERCISE & STEPS ━━━`,
+    `  🚶 Steps: ${state.dailySteps.toLocaleString()} / 12,000 goal`,
+    `  🧘 Meditation: ${state.habitMeditation?'✓ done':'✗ not done'}`,
+    `  🤸 Pliability: ${state.habitPliability?'✓ done':'✗ not done'}`,
+    `  🏋️ Strength: ${state.habitStrengthMins}min this week / 150min goal`,
+    `  🚶 Zone 1-3: ${state.habitZone13Mins}min this week / 150min goal`,
+    `  🔥 Zone 4-5: ${state.habitZone45Mins}min this week / 50min goal`,
+    ``,
+    `━━━ 💧 HYDRATION ━━━`,
+    `  ${pct}% (${fml(state.water)} / ${fml(target)})`,
+    ``,
+    `━━━ ☕ CAFFEINE ━━━`,
+    `  ${caffMg}mg`,
+    ``,
+    `━━━ 💊 SUPPS ━━━`,
+    `  ${suppsDone}/7 done`,
+    ``,
+    `━━━ 🚬 SMOKES ━━━`,
+    `  ${state.cigs>0?fmt05(state.cigs)+' today':'None today'}`,
+    ``,
+    `━━━ ⚡ ELECTROLYTES (supps) ━━━`,
+    `  K: ${suppK}mg · Na: ${suppNa}mg (~${suppNa+2200}mg total) · Mg: ${suppMg}mg`,
+    ``,
+    `━━━ 📱 SCREEN TIME ━━━`,
+    `  ${state.screenTimeMins}min / 30min goal`,
   ].join('\n');
 }
 
@@ -1209,8 +1270,190 @@ function renderHabits(){
   });
 }
 
+
+// ─── Render Body Recomp ───────────────────────────────────────────────────────
+// DEXA reference: Apr 2025 — 107.6kg, 21% BF, 81.5kg lean
+const DEXA_REF={weight:107.6,bf:21,lean:81.5,date:'Apr 2025'};
+const DEXA_TARGET_BF=15;
+const DEXA_TARGET_DATE=new Date('2026-05-01');
+
+// Calibration from 17 Nov 2025 same-day DEXA vs Hume:
+// Hume weight reads +1.6kg HIGH  -> subtract 1.6kg
+// Hume BF% reads -2.2% LOW       -> add 2.2%
+// Hume LBM reads +3.7kg HIGH     -> subtract 3.7kg
+// Hume targets for 15% actual BF: ~102.5-103kg, ~12.5-13% BF on Hume
+const HUME_WEIGHT_OFFSET=-1.6;  // subtract from Hume weight
+const HUME_BF_OFFSET=2.2;       // add to Hume BF%
+const HUME_LBM_OFFSET=-3.7;     // subtract from Hume LBM
+
+function calcDexaAdjusted(humeWeight,humeBf){
+  if(!humeWeight||!humeBf)return null;
+  const dexaWeight=Math.round((humeWeight+HUME_WEIGHT_OFFSET)*10)/10;
+  const dexaBf=Math.min(50,Math.round((humeBf+HUME_BF_OFFSET)*10)/10);
+  const fat=Math.round(dexaWeight*(dexaBf/100)*10)/10;
+  const lean=Math.round((dexaWeight-fat)*10)/10;
+  return {weight:dexaWeight,lean,fat,bf:dexaBf};
+}
+
+function renderBody(){
+  const container=document.getElementById('body-cards');
+  if(!container)return;
+  container.innerHTML='';
+
+  const w=state.bodyWeight;
+  const bf=state.bodyFatPct;
+  const adj=w&&bf?calcDexaAdjusted(w,bf):null;
+  const lbs=w?(w*2.2046).toFixed(1):0;
+  const proteinGoal=w?Math.round(w*2.2046):0; // 1g per lb (Huberman/Layne Norton standard)
+  const fibreGoal=45;
+
+  // Days to DEXA
+  const today=new Date();
+  const daysLeft=Math.max(0,Math.ceil((DEXA_TARGET_DATE-today)/(1000*60*60*24)));
+
+  // Progress to 15% BF
+  let progressHTML='';
+  if(adj){
+    const currentDexaBf=adj.bf;
+    const currentLean=adj.lean;
+    const targetWeight=Math.round(currentLean/(1-DEXA_TARGET_BF/100)*10)/10;
+    const fatToLose=Math.max(0,(adj.weight-targetWeight)).toFixed(1);
+    const bfGap=(currentDexaBf-DEXA_TARGET_BF).toFixed(1);
+    const onTrack=currentDexaBf<=18;
+    const pct=Math.max(0,Math.min(100,Math.round(((21-currentDexaBf)/(21-DEXA_TARGET_BF))*100)));
+    progressHTML=`
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px">May 1 DEXA Goal · ${daysLeft} days away</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><div style="font-size:13px;font-weight:bold;color:${onTrack?'#4ade80':'#fbbf24'}">DEXA BF: ${currentDexaBf}%</div><div style="font-size:10px;color:#3a5a4a;margin-top:1px">Target: ${DEXA_TARGET_BF}% · Gap: ${bfGap}%</div></div>
+          <div style="text-align:right"><div style="font-size:13px;font-weight:bold;color:#fb923c">-${fatToLose}kg fat</div><div style="font-size:10px;color:#5a3a1a;margin-top:1px">still to lose</div></div>
+        </div>
+        <div style="height:8px;background:rgba(74,222,128,.1);border-radius:4px;margin-bottom:6px">
+          <div style="height:100%;width:${pct}%;background:${onTrack?'#4ade80':'#fbbf24'};border-radius:4px;transition:width .4s"></div>
+        </div>
+        <div style="font-size:9px;color:#2a4a3a;text-align:center">${pct}% of the way from Apr 2025 (21%) to goal (15%)</div>
+        <div style="font-size:9px;color:#2a4a5a;text-align:center;margin-top:4px">Target weight at 15% BF: ~${targetWeight.toFixed(1)}kg (lean mass preserved)</div>
+      </div>`;
+  } else {
+    progressHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px;text-align:center">
+      <div style="font-size:10px;color:#4a7a9b;margin-bottom:4px">May 1 DEXA Goal · ${daysLeft} days away</div>
+      <div style="font-size:13px;color:#3a5a6a">Enter weight & BF% above to see progress</div>
+    </div>`;
+  }
+
+  container.innerHTML=`
+    <!-- AM Weigh-in -->
+    <div style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:16px;padding:16px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:bold;color:#4fc3f7;margin-bottom:12px">⚖️ Morning Weigh-in</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Weight (kg)</div>
+          <input id="body-weight-input" type="number" step="0.1" min="50" max="200" value="${w||''}" placeholder="e.g. 104.2"
+            style="width:100%;background:rgba(79,195,247,.08);border:1.5px solid rgba(79,195,247,.3);border-radius:10px;padding:10px 12px;color:#e0f0ff;font-size:16px;font-family:Georgia,serif;-webkit-appearance:none"/>
+          ${w?`<div style="font-size:9px;color:#3a6a7a;margin-top:4px">${lbs} lbs</div>`:''}
+        </div>
+        <div>
+          <div style="font-size:10px;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">BF% (Hume)</div>
+          <input id="body-bf-input" type="number" step="0.1" min="5" max="50" value="${bf||''}" placeholder="e.g. 13.9"
+            style="width:100%;background:rgba(167,139,250,.08);border:1.5px solid rgba(167,139,250,.3);border-radius:10px;padding:10px 12px;color:#e0f0ff;font-size:16px;font-family:Georgia,serif;-webkit-appearance:none"/>
+          ${adj?`<div style="font-size:9px;color:#a78bfa;margin-top:4px">~${adj.bf}% DEXA-adj</div>`:''}
+        </div>
+      </div>
+      <button id="body-save-btn" style="width:100%;margin-top:12px;padding:11px;border-radius:11px;font-size:13px;font-weight:bold;border:1.5px solid rgba(79,195,247,.45);background:rgba(79,195,247,.18);color:#4fc3f7;cursor:pointer">Save</button>
+    </div>
+
+    <!-- DEXA Adjusted -->
+    ${adj?`<div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:13px 16px;margin-bottom:12px">
+      <div style="font-size:10px;color:#7a5a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">DEXA-Calibrated Estimate</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center">
+        <div><div style="font-size:15px;font-weight:bold;color:#4fc3f7">${adj.weight}kg</div><div style="font-size:9px;color:#2a4a6a;margin-top:2px">DEXA Wt</div></div>
+        <div><div style="font-size:15px;font-weight:bold;color:#a78bfa">${adj.bf}%</div><div style="font-size:9px;color:#4a3a7a;margin-top:2px">Body Fat</div></div>
+        <div><div style="font-size:15px;font-weight:bold;color:#34d399">${adj.lean}kg</div><div style="font-size:9px;color:#1a4a3a;margin-top:2px">Lean Mass</div></div>
+        <div><div style="font-size:15px;font-weight:bold;color:#fb923c">${adj.fat}kg</div><div style="font-size:9px;color:#5a3a1a;margin-top:2px">Fat Mass</div></div>
+      </div>
+      <div style="font-size:9px;color:#3a2a5a;margin-top:8px;text-align:center">Calibrated from 17 Nov 2025 same-day DEXA · wt -1.6kg · BF +2.2% · LBM -3.7kg</div>
+    </div>`:''}
+
+    <!-- Hume Targets -->
+    <div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:14px;padding:12px 16px;margin-bottom:12px">
+      <div style="font-size:10px;color:#7a6a30;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">Hume Targets to Hit 15% Actual BF</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
+        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:8px"><div style="font-size:17px;font-weight:bold;color:#fbbf24">102.5–103kg</div><div style="font-size:9px;color:#6a5a20;margin-top:2px">Weight on Hume</div></div>
+        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:8px"><div style="font-size:17px;font-weight:bold;color:#fbbf24">12.5–13%</div><div style="font-size:9px;color:#6a5a20;margin-top:2px">BF% on Hume</div></div>
+      </div>
+    </div>
+
+    <!-- Progress to goal -->
+    ${progressHTML}
+
+    <!-- Daily nutrition accountability -->
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">Daily Nutrition Goals</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <div>
+          <div style="font-size:13px;font-weight:bold;color:#4ade80">🔥 Calorie Deficit</div>
+          <div style="font-size:10px;color:#3a5a4a;margin-top:1px">Stayed in deficit today · tracked in MFP</div>
+        </div>
+        <button data-bkey="bodyCalDeficit" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(74,222,128,${state.bodyCalDeficit?.6:.3});background:${state.bodyCalDeficit?'rgba(74,222,128,.25)':'rgba(74,222,128,.07)'};color:#4ade80;cursor:pointer">${state.bodyCalDeficit?'✓':'○'}</button>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <div>
+          <div style="font-size:13px;font-weight:bold;color:#fb923c">💪 Protein Goal</div>
+          <div id="protein-goal-label" style="font-size:10px;color:#5a3a1a;margin-top:1px">${proteinGoal?proteinGoal+'g target (1g/lb · '+lbs+'lbs)':'Enter weight above to calculate'} · tracked in MFP</div>
+        </div>
+        <button data-bkey="bodyProtein" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(251,146,60,${state.bodyProtein?.6:.3});background:${state.bodyProtein?'rgba(251,146,60,.25)':'rgba(251,146,60,.07)'};color:#fb923c;cursor:pointer">${state.bodyProtein?'✓':'○'}</button>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+        <div>
+          <div style="font-size:13px;font-weight:bold;color:#34d399">🌿 Fibre Goal</div>
+          <div style="font-size:10px;color:#1a4a3a;margin-top:1px">${fibreGoal}g target · tracked in MFP</div>
+        </div>
+        <button data-bkey="bodyFibre" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(52,211,153,${state.bodyFibre?.6:.3});background:${state.bodyFibre?'rgba(52,211,153,.25)':'rgba(52,211,153,.07)'};color:#34d399;cursor:pointer">${state.bodyFibre?'✓':'○'}</button>
+      </div>
+    </div>
+
+    <!-- DEXA history context -->
+    <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:11px 14px">
+      <div style="font-size:10px;color:#4a7a9b;font-weight:bold;margin-bottom:6px">DEXA History</div>
+      <div style="font-size:10px;color:#2a4a5a;line-height:1.8">
+        <div style="display:flex;justify-content:space-between"><span>Dec 2019</span><span style="color:#00e5a0">95.6kg · 15.1% BF ← your goal</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Jun 2020</span><span>102.8kg · 19.4%</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Sep 2022</span><span>108.5kg · 22.8%</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Jun 2024</span><span style="color:#ef5350">117.4kg · 24.9% ← peak</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Apr 2025</span><span style="color:#4fc3f7">107.6kg · 21.0% ← last scan</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#fbbf24">May 2026 goal</span><span style="color:#fbbf24">~97-98kg · 15.0%</span></div>
+      </div>
+    </div>
+  `;
+
+  // Wire save button
+  document.getElementById('body-save-btn').onclick=()=>{
+    const wv=parseFloat(document.getElementById('body-weight-input').value)||0;
+    const bv=parseFloat(document.getElementById('body-bf-input').value)||0;
+    state.bodyWeight=wv;state.bodyFatPct=bv;saveAll();renderBody();
+  };
+
+  // Live protein preview on weight input
+  document.getElementById('body-weight-input').addEventListener('input',function(){
+    const wv=parseFloat(this.value)||0;
+    const liveProtein=wv?Math.round(wv*2.2046):0;
+    const liveLbs=wv?(wv*2.2046).toFixed(1):0;
+    const el=document.getElementById('protein-goal-label');
+    if(el) el.textContent=liveProtein?liveProtein+'g target (1g/lb · '+liveLbs+'lbs) · tracked in MFP':'Enter weight above to calculate · tracked in MFP';
+  });
+
+  // Wire nutrition ticks
+  container.querySelectorAll('button[data-bkey]').forEach(b=>{
+    b.onclick=()=>{state[b.dataset.bkey]=!state[b.dataset.bkey];saveAll();renderBody();};
+  });
+}
+
 // ─── Main Render ──────────────────────────────────────────────────────────────
 function render(){
+  renderBody();
   renderWater();
   renderElec();
   renderDrinks();

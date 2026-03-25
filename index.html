@@ -179,9 +179,10 @@ button:active{transform:scale(0.93)}
     <div style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic" id="elec-note"></div>
     <div id="elec-cards"></div>
     <div class="totals-card">
-      <div class="totals-title">Today's Totals</div>
+      <div class="totals-title">Supplement Totals</div>
       <div class="totals-grid" id="totals-grid"></div>
-      <div style="font-size:9px;color:#1e3a4a;margin-top:9px;text-align:center">Potassium is your most important mineral gap · Focus on Na:K ratio</div>
+      <div id="na-total-note" style="font-size:9px;margin-top:8px;text-align:center;line-height:1.5"></div>
+      <div style="font-size:9px;color:#1e3a4a;margin-top:6px;text-align:center">Targets show supplement contribution only · food adds ~2,200mg Na, ~3,500mg K, ~320mg Mg</div>
     </div>
   </div>
 
@@ -270,11 +271,17 @@ button:active{transform:scale(0.93)}
   <div class="panel" id="panel-supps">
     <div style="border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:rgba(129,140,248,.06);border:1.5px solid rgba(129,140,248,.2)" id="supp-header">
       <div><div style="font-size:14px;font-weight:bold;color:#818cf8" id="supp-title">Daily Supplements</div><div style="font-size:10px;color:#4a4a8a;margin-top:2px">Tap each one when you've taken it</div></div>
-      <div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#818cf8" id="supp-count">0<span style="font-size:13px;color:#4a4a8a">/6</span></div></div>
+      <div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#818cf8" id="supp-count">0<span style="font-size:13px;color:#4a4a8a">/5</span></div></div>
     </div>
     <div class="prog-bar-wrap" id="supp-prog"></div>
     <div id="supp-cards"></div>
     <div id="mag-note" style="display:none;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:10px;padding:9px 13px;font-size:10px;color:#34d399;text-align:center"></div>
+  </div>
+
+  <div class="panel" id="panel-history">
+    <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:14px;text-align:center">Past 30 Days</div>
+    <div id="history-list"></div>
+    <div style="font-size:9px;color:#1e3a4a;text-align:center;margin-top:8px">Data saves automatically at midnight each day</div>
   </div>
 
   <div class="footer">Pale yellow = hydrated · Dark yellow = drink now · Clear = over-hydrated</div>
@@ -283,14 +290,14 @@ button:active{transform:scale(0.93)}
 <script>
 // ─── Data ───────────────────────────────────────────────────────────────────
 const DAY_TYPES=[
-  {id:"rest",label:"Rest Day",emoji:"😴",target:3000,seeking:1,bulk:0,note:"Baseline maintenance"},
-  {id:"strength",label:"Strength Training",emoji:"🏋️",target:3500,seeking:2,bulk:0,note:"A/C gym — moderate sweat"},
-  {id:"hiit",label:"Norwegian 4x4 HIIT",emoji:"🔥",target:4000,seeking:2,bulk:0,note:"High intensity — front-load before session"},
-  {id:"walk_golf",label:"Walking Golf",emoji:"⛳",target:4750,seeking:2,bulk:0,note:"4+ hrs outdoors — start hydrated night before"},
-  {id:"cart_golf",label:"Cart Golf + Beers",emoji:"🍺",target:5000,seeking:2,bulk:0,note:"+250ml water per standard drink"},
-  {id:"gym_cart_golf",label:"Gym + Cart Golf",emoji:"🏋️⛳",target:5250,seeking:2,bulk:1,note:"Double session — front-load electrolytes"},
-  {id:"bike",label:"Bike + Training",emoji:"🚴",target:4250,seeking:2,bulk:1,note:"Double activity — highest electrolyte day"},
-  {id:"ruck",label:"Ruck",emoji:"🎒",target:5250,seeking:2,bulk:1,note:"Weighted outdoor carry — peak sweat demand"},
+  {id:"rest",label:"Rest Day",emoji:"😴",target:3000,seeking:1,bulk:0,salts:0,note:"Baseline maintenance — no Hydration Salts needed"},
+  {id:"strength",label:"Strength Training",emoji:"🏋️",target:3500,seeking:2,bulk:0,salts:0,note:"A/C gym — moderate sweat, Hydration Salts not needed"},
+  {id:"hiit",label:"Norwegian 4x4 HIIT",emoji:"🔥",target:4000,seeking:2,bulk:0,salts:1,note:"High intensity — front-load before session"},
+  {id:"walk_golf",label:"Walking Golf",emoji:"⛳",target:4750,seeking:2,bulk:0,salts:1,note:"4+ hrs outdoors — high sweat, Hydration Salts warranted"},
+  {id:"cart_golf",label:"Cart Golf + Beers",emoji:"🍺",target:5000,seeking:2,bulk:0,salts:1,note:"Alcohol dehydrates — Hydration Salts warranted"},
+  {id:"gym_cart_golf",label:"Gym + Cart Golf",emoji:"🏋️⛳",target:5250,seeking:2,bulk:1,salts:1,note:"Double session — front-load electrolytes"},
+  {id:"bike",label:"Bike + Training",emoji:"🚴",target:4250,seeking:2,bulk:1,salts:1,note:"Double activity — highest electrolyte day"},
+  {id:"ruck",label:"Ruck",emoji:"🎒",target:5250,seeking:2,bulk:0,salts:1,note:"Weighted outdoor carry — peak sweat demand"},
 ];
 const CIG_PLAN=[2,1.5,1,0.5,0];
 const CAFF_SOURCES=[
@@ -301,11 +308,11 @@ const CAFF_SOURCES=[
 ];
 const ELEC_PRODUCTS=[
   {id:"seeking",label:"Seeking Health",sub:"Optimal Electrolyte — restock on order",color:"#c084fc",rgb:"192,132,252",outOfStock:true,
-   minerals:["Potassium","Magnesium","Sodium"],mfn:(s)=>[s*500,s*125,s*150],hint:"Take with breakfast or pre-training · Avoid close to bed"},
+   minerals:["Potassium","Magnesium","Sodium"],mfn:(s)=>[s*500,s*125,s*150],hint:"Auto-logs +450ml water 💧 · Take with breakfast or pre-training"},
   {id:"bulk",label:"Bulk Nutrients Caps",sub:"Electrolyte Caps · 4 caps = 1 serve",color:"#fb923c",rgb:"251,146,60",outOfStock:false,
    minerals:["Potassium","Magnesium","Sodium"],mfn:(s)=>[Math.round(s*139.5),s*127,s*113],hint:"4 caps per serve · also contains 88.8mg calcium"},
   {id:"salts",label:"Bulk Nutrients Hydration Salts",sub:"Powder · ~1,000mg sodium per serve",color:"#38bdf8",rgb:"56,189,248",outOfStock:false,
-   minerals:["Sodium","Potassium","Magnesium"],mfn:(s)=>[s*1000,0,0],hint:"High-sweat outdoor sessions only — use with plenty of water"},
+   minerals:["Sodium","Potassium","Magnesium"],mfn:(s)=>[s*1014,s*200,s*60],hint:"Auto-logs +450ml water 💧 · High-sweat sessions only — adds ~1,000mg Na"},
 ];
 const SUPPS=[
   {id:"omega",label:"Nordic Naturals Ultimate Omega",emoji:"🐟",dose:"2 softgels · 1280mg Omega-3",sub:"Heart, brain & immune health",color:"56,189,248",tip:"Take with a meal containing fat for best absorption"},
@@ -313,7 +320,7 @@ const SUPPS=[
   {id:"theaninePM",label:"L-Theanine · Night",emoji:"🌙",dose:"1 cap · 200mg",sub:"Wind down · stress relief",color:"167,139,250",tip:"Take after dinner to ease into wind-down mode"},
   {id:"vitb",label:"Herbs of Gold B Complete",emoji:"⚡",dose:"1 tablet · sustained release 8hrs",sub:"Energy, mood & nervous system",color:"251,191,36",tip:"Take with food in the morning for all-day energy"},
   {id:"creatine",label:"Creatine Monohydrate",emoji:"💪",dose:"8g",sub:"Strength, power & muscle recovery",color:"251,146,60",tip:"Timing doesn't matter much — consistency is what counts"},
-  {id:"mag",label:"Magnesium Glycinate",emoji:"😴",dose:"1 or 2 caps",sub:"Sleep, recovery & muscle function",color:"52,211,153",tip:"Best taken at night — supports sleep quality and recovery",isMag:true},
+  {id:"mag",label:"Magnesium Glycinate",emoji:"😴",dose:"1 cap · 150mg",sub:"Sleep, recovery & muscle function",color:"52,211,153",tip:"Best taken at night — 300mg causes restless legs; 150mg is your sweet spot"},
 ];
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -342,7 +349,7 @@ let state={
   suppTheanineAM:ld('suppTheanineAM',false),
   suppTheaninePM:ld('suppTheaninePM',false),
   suppVitB:ld('suppVitB',false),
-  suppMagDose:ld('suppMagDose',0),
+  suppMag:ld('suppMag',false),
   suppCreatine:ld('suppCreatine',false),
   activeTab:'water',
 };
@@ -355,7 +362,7 @@ function saveAll(){
   sd('caffLog',state.caffLog);
   sd('suppOmega',state.suppOmega);sd('suppTheanineAM',state.suppTheanineAM);
   sd('suppTheaninePM',state.suppTheaninePM);sd('suppVitB',state.suppVitB);
-  sd('suppMagDose',state.suppMagDose);sd('suppCreatine',state.suppCreatine);
+  sd('suppMag',state.suppMag);sd('suppCreatine',state.suppCreatine);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -385,14 +392,14 @@ document.getElementById('day-btn').onclick=()=>setShowDD(!ddOpen);
 document.addEventListener('click',e=>{if(!e.target.closest('.day-selector'))setShowDD(false);});
 
 // Tabs
-const TABS=[{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'supps',emoji:'💊',title:'Supps'}];
+const TABS=[{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'supps',emoji:'💊',title:'Supps'},{id:'history',emoji:'📅',title:'History'}];
 const tabsEl=document.getElementById('tabs');
 TABS.forEach(t=>{
   const b=document.createElement('button');
   b.className='tab'+(t.id===state.activeTab?' active':'');
   b.id='tab-'+t.id;
   b.innerHTML=`<span class="tab-icon">${t.emoji}</span><span>${t.title}</span>`;
-  b.onclick=()=>{state.activeTab=t.id;TABS.forEach(x=>{document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');document.getElementById('panel-'+x.id).className='panel'+(x.id===t.id?' active':'');});};
+  b.onclick=()=>{state.activeTab=t.id;TABS.forEach(x=>{document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');document.getElementById('panel-'+x.id).className='panel'+(x.id===t.id?' active':'');});if(t.id==='history'){saveSnapshot();renderHistory();}};
   tabsEl.appendChild(b);
 });
 
@@ -404,7 +411,7 @@ document.getElementById('reset-btn').onclick=()=>{
   state.water=0;state.seeking=0;state.bulk=0;state.salts=0;
   state.sessionDrinks=0;state.cigs=0;state.caffLog=[];
   state.suppOmega=false;state.suppTheanineAM=false;state.suppTheaninePM=false;
-  state.suppVitB=false;state.suppMagDose=0;state.suppCreatine=false;
+  state.suppVitB=false;state.suppMag=false;state.suppCreatine=false;
   saveAll();render();
 };
 
@@ -450,8 +457,9 @@ function renderElec(){
   const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
   document.getElementById('elec-note').textContent=`${dt.emoji} ${dt.note}`;
   const scoops={seeking:state.seeking,bulk:state.bulk,salts:state.salts};
-  const targets={seeking:dt.seeking,bulk:Math.max(dt.bulk,1),salts:Math.max(dt.bulk,1)};
-  const optional={seeking:false,bulk:dt.bulk===0,salts:dt.bulk===0};
+  // Use separate salts target from day type
+  const targets={seeking:dt.seeking,bulk:Math.max(dt.bulk,1),salts:Math.max(dt.salts,1)};
+  const optional={seeking:false,bulk:dt.bulk===0,salts:dt.salts===0};
   const container=document.getElementById('elec-cards');
   container.innerHTML='';
   ELEC_PRODUCTS.forEach(ep=>{
@@ -488,9 +496,12 @@ function renderElec(){
   container.querySelectorAll('button[data-ep]').forEach(b=>{
     b.onclick=()=>{
       const id=b.dataset.ep,act=b.dataset.act;
-      if(act==='minus')state[id]=Math.max(0,state[id]-1);
-      else state[id]++;
-      saveAll();renderElec();renderTotals();
+      if(act==='minus') state[id]=Math.max(0,state[id]-1);
+      else {
+        state[id]++;
+        if(id==='seeking'||id==='salts') state.water+=450;
+      }
+      saveAll();renderElec();renderTotals();renderWater();
     };
   });
   renderTotals();
@@ -498,16 +509,32 @@ function renderElec(){
 
 function renderTotals(){
   const pw=state.caffLog.filter(e=>e.sourceId==='preworkout').length;
+  const suppNa=(state.seeking*150)+(state.bulk*113)+(state.salts*1014)+(pw*50);
+  const suppK=(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200)+(pw*100);
+  const suppMg=(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(pw*50)+(state.suppMag?150:0);
+
   const totals=[
-    {label:'Potassium',val:(state.seeking*500)+Math.round(state.bulk*139.5)+(pw*100),target:3000,color:'#a78bfa'},
-    {label:'Sodium',val:(state.seeking*150)+(state.bulk*113)+(state.salts*1000)+(pw*50),target:3000,color:'#fb923c'},
-    {label:'Magnesium',val:(state.seeking*125)+(state.bulk*127)+(pw*50)+(state.suppMagDose*150),target:400,color:'#34d399'},
+    {label:'Potassium',val:suppK,target:3000,color:'#a78bfa'},
+    {label:'Sodium',val:suppNa,target:3000,color:'#fb923c'},
+    {label:'Magnesium',val:suppMg,target:400,color:'#34d399'},
   ];
   const g=document.getElementById('totals-grid');
   g.innerHTML=totals.map(m=>{
     const p=Math.min((m.val/m.target)*100,100);
     return `<div class="total-item"><div class="total-lbl">${m.label}</div><div class="total-val" style="color:${p>=100?'#00e5a0':m.color}">${m.val}mg</div><div class="mini-bar"><div class="mini-fill" style="width:${p}%;background:${p>=100?'#00e5a0':m.color}"></div></div></div>`;
   }).join('');
+
+  // Estimated total sodium (supps + food baseline)
+  const FOOD_NA_BASELINE=2200;
+  const estTotalNa=suppNa+FOOD_NA_BASELINE;
+  const naEl=document.getElementById('na-total-note');
+  if(naEl){
+    let naColor,naWarn;
+    if(estTotalNa>3700){naColor='#ef5350';naWarn='⚠️ high';}
+    else if(estTotalNa>3200){naColor='#fbbf24';naWarn='borderline';}
+    else{naColor='#fb923c';naWarn='✓ on target';}
+    naEl.innerHTML=`Est. total sodium today: <span style="color:${naColor};font-weight:bold">~${estTotalNa.toLocaleString()}mg</span> <span style="color:${naColor}">(${naWarn})</span><br/><span style="color:#2a4a5a">supps ${suppNa}mg + food ~${FOOD_NA_BASELINE.toLocaleString()}mg</span>`;
+  }
 }
 
 // ─── Render Caffeine ──────────────────────────────────────────────────────────
@@ -549,27 +576,25 @@ function renderCaff(){
 
 // ─── Render Supps ─────────────────────────────────────────────────────────────
 function renderSupps(){
-  const vals={omega:state.suppOmega,theanineAM:state.suppTheanineAM,theaninePM:state.suppTheaninePM,vitb:state.suppVitB,creatine:state.suppCreatine,mag:state.suppMagDose>0};
+  const vals={omega:state.suppOmega,theanineAM:state.suppTheanineAM,theaninePM:state.suppTheaninePM,vitb:state.suppVitB,creatine:state.suppCreatine,mag:state.suppMag};
   const done=Object.values(vals).filter(Boolean).length;
-  const all=done===6;
+  const all=done===5;
   document.getElementById('supp-title').textContent=all?'All done today! 🎉':'Daily Supplements';
-  document.getElementById('supp-count').innerHTML=`${done}<span style="font-size:13px;color:#4a4a8a">/6</span>`;
+  document.getElementById('supp-count').innerHTML=`${done}<span style="font-size:13px;color:#4a4a8a">/5</span>`;
   document.getElementById('supp-count').style.color=all?'#00e5a0':'#818cf8';
   document.getElementById('supp-header').style.background=all?'rgba(129,140,248,.12)':'rgba(129,140,248,.06)';
   document.getElementById('supp-header').style.borderColor=`rgba(129,140,248,${all?.45:.2})`;
-  // Progress bar
   const prog=document.getElementById('supp-prog');
   const keys=['omega','theanineAM','theaninePM','vitb','creatine','mag'];
   prog.innerHTML=keys.map(k=>`<div class="prog-seg" style="background:${vals[k]?(all?'#00e5a0':'#818cf8'):'rgba(129,140,248,.12)'}"></div>`).join('');
-  // Cards
   const cards=document.getElementById('supp-cards');
   cards.innerHTML='';
   SUPPS.forEach(s=>{
-    const taken=s.isMag?state.suppMagDose>0:state[`supp${s.id.charAt(0).toUpperCase()+s.id.slice(1)}`];
+    const key2=s.id==='mag'?'suppMag':`supp${s.id.charAt(0).toUpperCase()+s.id.slice(1)}`;const taken=!!state[key2];
     const div=document.createElement('div');
     div.className='supp-card';
     div.style.cssText=`background:${taken?`rgba(${s.color},.12)`:`rgba(${s.color},.04)`};border:1.5px solid rgba(${s.color},${taken?.45:.18})`;
-    const dose=s.isMag?(state.suppMagDose===0?'1 cap (150mg) or 2 caps (300mg)':state.suppMagDose===1?'✓ 1 cap · 150mg':'✓ 2 caps · 300mg'):s.dose;
+    const dose=s.dose;
     div.innerHTML=`
       <div class="supp-inner">
         <div class="supp-info">
@@ -577,9 +602,8 @@ function renderSupps(){
           <div class="supp-dose">${dose}</div>
           <div class="supp-sub">${s.sub}</div>
         </div>
-        ${!s.isMag?`<button class="supp-toggle" data-sid="${s.id}" style="border:1.5px solid rgba(${s.color},${taken?.6:.3});background:${taken?`rgba(${s.color},.25)`:`rgba(${s.color},.07)`};color:rgba(${s.color},1)">${taken?'✓':'○'}</button>`:''}
+        <button class="supp-toggle" data-sid="${s.id}" style="border:1.5px solid rgba(${s.color},${taken?.6:.3});background:${taken?`rgba(${s.color},.25)`:`rgba(${s.color},.07)`};color:rgba(${s.color},1)">${taken?'✓':'○'}</button>
       </div>
-      ${s.isMag?`<div class="mag-btns"><button class="mag-btn" data-mag="1" style="border:1.5px solid rgba(${s.color},${state.suppMagDose===1?.6:.25});background:rgba(${s.color},${state.suppMagDose===1?.2:.05});color:rgba(${s.color},1)">${state.suppMagDose===1?'✓ ':''}1 cap · 150mg</button><button class="mag-btn" data-mag="2" style="border:1.5px solid rgba(${s.color},${state.suppMagDose===2?.6:.25});background:rgba(${s.color},${state.suppMagDose===2?.2:.05});color:rgba(${s.color},1)">${state.suppMagDose===2?'✓ ':''}2 caps · 300mg</button></div>`:''}
       <div class="supp-tip" style="color:rgba(${s.color},.4)">💡 ${s.tip}</div>
     `;
     cards.appendChild(div);
@@ -587,15 +611,12 @@ function renderSupps(){
   cards.querySelectorAll('.supp-toggle').forEach(b=>{
     b.onclick=()=>{
       const sid=b.dataset.sid;
-      const key=`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
-      state[key]=!state[key];saveAll();renderSupps();
+      const key=sid==='mag'?'suppMag':`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
+      state[key]=!state[key];saveAll();renderSupps();renderTotals();
     };
   });
-  cards.querySelectorAll('.mag-btn').forEach(b=>{
-    b.onclick=()=>{const v=parseInt(b.dataset.mag);state.suppMagDose=state.suppMagDose===v?0:v;saveAll();renderSupps();renderTotals();};
-  });
   const mn=document.getElementById('mag-note');
-  if(state.suppMagDose>0){mn.style.display='block';mn.textContent=`+${state.suppMagDose*150}mg magnesium from Mag Glycinate counted in electrolyte totals`;}
+  if(state.suppMag){mn.style.display='block';mn.textContent='+150mg magnesium from Mag Glycinate counted in electrolyte totals';}
   else mn.style.display='none';
 }
 
@@ -606,7 +627,6 @@ function renderWater(){
   const pct=Math.min((state.water/target)*100,100);
   const waveY=100-pct;
   const color=sc(pct);
-  // SVG
   document.getElementById('wg-stop1').setAttribute('stop-color',color);
   document.getElementById('wg-stop2').setAttribute('stop-color',color);
   document.getElementById('wave-rect').setAttribute('y',waveY*1.76);
@@ -619,11 +639,9 @@ function renderWater(){
   document.getElementById('svg-target').textContent=`of ${fml(target)}`;
   document.getElementById('svg-pct').textContent=`${Math.round(pct)}%`;
   document.getElementById('svg-pct').setAttribute('fill',color);
-  // Status
   const s=us(pct);
   const pill=document.getElementById('status-pill');
   pill.textContent=s.l;pill.style.background=s.c+'16';pill.style.border=`1px solid ${s.c}38`;pill.style.color=s.c;
-  // Stats
   const rem=Math.max(target-state.water,0);
   const cups=Math.ceil(rem/450);
   const remEl=document.getElementById('stat-remaining');
@@ -631,7 +649,6 @@ function renderWater(){
   const cupEl=document.getElementById('stat-cups');
   cupEl.textContent=rem>0?`${cups}×450ml`:'Done! ✓';cupEl.style.color=rem>0?'#4fc3f7':'#00e5a0';
   document.getElementById('undo-water').disabled=state.water===0;
-  // Day label
   document.getElementById('day-label').textContent=`${dt.emoji} ${dt.label}`;
   document.querySelectorAll('.day-option').forEach(o=>o.classList.toggle('active',o.dataset.id===state.dayTypeId));
 }
@@ -650,15 +667,12 @@ function renderDrinks(){
   sc2.style.border=`1.5px solid rgba(244,114,182,${state.sessionDrinks>=4?.5:.25})`;
   document.getElementById('session-count').textContent=fmt05(state.sessionDrinks);
   document.getElementById('session-count').style.color=state.sessionDrinks>=4?'#ef5350':'#f472b6';
-  // Dots
   const dots=document.getElementById('drink-dots');
   dots.innerHTML=Array.from({length:4},(_,i)=>`<div class="drink-dot" style="background:${i<state.sessionDrinks?(state.sessionDrinks>=4?'#ef5350':'#f472b6'):'rgba(244,114,182,.12)'}"></div>`).join('');
-  // Buttons
   const d1=document.getElementById('drink-1'),d15=document.getElementById('drink-15');
   [d1,d15].forEach(b=>{b.style.border=`1px solid rgba(244,114,182,${blocked?.15:.5})`;b.style.background=`rgba(244,114,182,${blocked?.04:.18})`;b.style.color=blocked?'#5a3a4a':'#f472b6';b.style.cursor=blocked?'not-allowed':'pointer';});
   if(blocked){d1.innerHTML=pastCut?'Cutoff':'Limit';d15.innerHTML=pastCut?'':'-';}
   else{d1.innerHTML='+ 1 std<br><span style="font-size:10px;font-weight:normal">+250ml 💧</span>';d15.innerHTML='+ 1.5 std<br><span style="font-size:10px;font-weight:normal">+375ml 💧</span>';}
-  // Weekly
   const wkLeft=Math.max(10-state.weekDrinks,0);
   document.getElementById('week-count').innerHTML=`${fmt05(state.weekDrinks)} <span style="font-size:12px;color:#7a4a6a">/ 10</span>`;
   document.getElementById('week-count').style.color=state.weekDrinks>=10?'#ef5350':'#f472b6';
@@ -697,13 +711,75 @@ function renderSmokes(){
   }
   document.getElementById('cig-minus').disabled=state.cigs===0;
   document.getElementById('cig-minus').style.color=state.cigs===0?'#4a3a10':'#fbbf24';
-  // Roadmap
   const rm=document.getElementById('cig-roadmap');
   rm.innerHTML=CIG_PLAN.map((g,i)=>{
     const cur=i===appWeek,past=i<appWeek;
     return `<div class="cig-cell"><div class="cig-box" style="background:${g===0?'rgba(0,229,160,.2)':cur?'rgba(251,191,36,.25)':past?'rgba(255,255,255,.1)':'rgba(255,255,255,.03)'};border:1px solid ${g===0?'rgba(0,229,160,.4)':cur?'rgba(251,191,36,.5)':'rgba(255,255,255,.07)'};font-weight:${cur?'bold':'normal'};color:${g===0?'#00e5a0':cur?'#fbbf24':past?'#5a7a5a':'#2a3a4a'}">${g===0?'🚭':fmt05(g)}</div><div class="cig-wlbl" style="color:${cur?'#7a6a30':'#2a3a4a'}">W${i+1}</div></div>`;
   }).join('');
   document.getElementById('cig-start-lbl').textContent=`Plan started: ${new Date(state.cigStartDate).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}`;
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
+function saveSnapshot(){
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
+  const targetWater=dt.target+(state.sessionDrinks*250);
+  const snap={
+    date:today,
+    dateLabel:new Date().toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}),
+    water:state.water,
+    waterTarget:targetWater,
+    dayType:dt.label,
+    drinks:state.weekDrinks,
+    cigs:state.cigs,
+    caffMg:state.caffLog.reduce((s,e)=>s+e.mg,0),
+    supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag].filter(Boolean).length,
+  };
+  try{localStorage.setItem('snap_'+today,JSON.stringify(snap));}catch{}
+}
+
+function renderHistory(){
+  const list=document.getElementById('history-list');
+  const entries=[];
+  for(let i=0;i<30;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=d.toDateString();
+    if(key===today){
+      const dt=DAY_TYPES.find(x=>x.id===state.dayTypeId)||DAY_TYPES[0];
+      const targetWater=dt.target+(state.sessionDrinks*250);
+      entries.push({
+        dateLabel:'Today',
+        water:state.water,waterTarget:targetWater,dayType:dt.label,
+        drinks:state.sessionDrinks,cigs:state.cigs,
+        caffMg:state.caffLog.reduce((s,e)=>s+e.mg,0),
+        supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag].filter(Boolean).length,
+        isToday:true,
+      });
+    } else {
+      try{
+        const v=localStorage.getItem('snap_'+key);
+        if(v)entries.push({...JSON.parse(v),isToday:false});
+      }catch{}
+    }
+  }
+  if(entries.length===0){list.innerHTML='<div style="text-align:center;color:#2a4a5a;padding:30px;font-size:13px">No history yet — check back tomorrow!</div>';return;}
+  list.innerHTML=entries.map(e=>{
+    const wpct=Math.min(Math.round((e.water/e.waterTarget)*100),100);
+    const wcolor=wpct>=100?'#00e5a0':wpct>=60?'#4fc3f7':wpct>=30?'#ffd54f':'#ef5350';
+    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px;margin-bottom:10px${e.isToday?';border-color:rgba(79,195,247,.3)':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><div style="font-size:14px;font-weight:bold;color:${e.isToday?'#4fc3f7':'#e0f0ff'}">${e.dateLabel}</div><div style="font-size:10px;color:#4a7a9b;margin-top:1px">${e.dayType}</div></div>
+        <div style="font-size:11px;font-weight:bold;color:${wcolor}">${wpct}% hydrated</div>
+      </div>
+      <div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;margin-bottom:10px"><div style="height:100%;width:${wpct}%;background:${wcolor};border-radius:3px"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
+        <div style="text-align:center"><div style="font-size:13px;font-weight:bold;color:#4fc3f7">${fml(e.water)}</div><div style="font-size:9px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Water</div></div>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:bold;color:#f472b6">${fmt05(e.drinks)}</div><div style="font-size:9px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Drinks</div></div>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:bold;color:#4ade80">${e.caffMg}mg</div><div style="font-size:9px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Caffeine</div></div>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:bold;color:#818cf8">${e.supps}/5</div><div style="font-size:9px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Supps</div></div>
+      </div>
+      <div style="font-size:10px;color:${e.cigs>0?'#fbbf24':'#2a4a5a'};margin-top:8px;text-align:center">🚬 ${e.cigs>0?fmt05(e.cigs)+' smoked':'No smokes'}</div>
+    </div>`;
+  }).join('');
 }
 
 // ─── Main Render ──────────────────────────────────────────────────────────────
@@ -714,6 +790,8 @@ function render(){
   renderSmokes();
   renderCaff();
   renderSupps();
+  renderHistory();
+  saveSnapshot();
 }
 
 render();

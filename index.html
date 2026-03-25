@@ -29,9 +29,9 @@ button:active{transform:scale(0.93)}
 .day-option.active{background:rgba(79,195,247,.13);color:#4fc3f7}
 .day-option span.ml{color:#4a7a9b;font-size:11px}
 .tabs{display:flex;background:rgba(255,255,255,.04);border-radius:14px;padding:3px;margin-bottom:18px;width:100%;max-width:340px;gap:2px}
-.tab{flex:1;padding:9px 0;border-radius:11px;color:#3a6a8a;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:1px;transition:all .2s}
+.tab{flex:1;padding:7px 0;border-radius:11px;color:#3a6a8a;font-size:9px;display:flex;flex-direction:column;align-items:center;gap:1px;transition:all .2s}
 .tab.active{background:rgba(79,195,247,.18);color:#4fc3f7;font-weight:bold}
-.tab-icon{font-size:16px}
+.tab-icon{font-size:14px}
 .panel{width:100%;max-width:340px;display:none}
 .panel.active{display:block}
 /* Water */
@@ -171,6 +171,7 @@ button:active{transform:scale(0.93)}
       <button class="undo-btn" id="undo-water">← Undo 450ml</button>
       <button class="reset-btn" id="reset-btn">Reset</button>
     </div>
+    <div class="footer" style="margin-top:14px">Pale yellow = hydrated · Dark yellow = drink now · Clear = over-hydrated</div>
   </div>
 
   <!-- ELECTROLYTES -->
@@ -271,7 +272,7 @@ button:active{transform:scale(0.93)}
   <div class="panel" id="panel-supps">
     <div style="border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:rgba(129,140,248,.06);border:1.5px solid rgba(129,140,248,.2)" id="supp-header">
       <div><div style="font-size:14px;font-weight:bold;color:#818cf8" id="supp-title">Daily Supplements</div><div style="font-size:10px;color:#4a4a8a;margin-top:2px">Tap each one when you've taken it</div></div>
-      <div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#818cf8" id="supp-count">0<span style="font-size:13px;color:#4a4a8a">/5</span></div></div>
+      <div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#818cf8" id="supp-count">0<span style="font-size:13px;color:#4a4a8a">/7</span></div></div>
     </div>
     <div class="prog-bar-wrap" id="supp-prog"></div>
     <div id="supp-cards"></div>
@@ -279,24 +280,52 @@ button:active{transform:scale(0.93)}
   </div>
 
   <div class="panel" id="panel-history">
-    <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:14px;text-align:center">Past 30 Days</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em">Past 30 Days</div>
+      <button id="share-btn" style="font-size:11px;font-weight:bold;color:#4fc3f7;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:5px 11px;cursor:pointer">📋 Share Today</button>
+    </div>
+    <div id="share-feedback" style="display:none;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.25);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#00e5a0;text-align:center">✓ Copied to clipboard!</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button id="export-week-btn" style="flex:1;font-size:10px;font-weight:bold;color:#a78bfa;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:7px 4px;cursor:pointer">📊 This Week</button>
+      <button id="export-april-btn" style="flex:1;font-size:10px;font-weight:bold;color:#4fc3f7;background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.25);border-radius:8px;padding:7px 4px;cursor:pointer">📅 All April</button>
+    </div>
     <div id="history-list"></div>
     <div style="font-size:9px;color:#1e3a4a;text-align:center;margin-top:8px">Data saves automatically at midnight each day</div>
   </div>
 
-  <div class="footer">Pale yellow = hydrated · Dark yellow = drink now · Clear = over-hydrated</div>
+  <!-- ORAL -->
+
+  <div class="panel" id="panel-oral">
+    <div style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic">Brush 3 seconds per tooth · front, back &amp; biting surfaces</div>
+    <div id="oral-cards"></div>
+  </div>
+
+  <!-- SCREEN TIME -->
+
+  <div class="panel" id="panel-screentime">
+    <div id="screentime-cards"></div>
+  </div>
+
+  <!-- HABITS -->
+
+  <div class="panel" id="panel-habits">
+    <div id="habits-cards"></div>
+  </div>
+
 </div>
 
 <script>
 // ─── Data ───────────────────────────────────────────────────────────────────
 const DAY_TYPES=[
   {id:"rest",label:"Rest Day",emoji:"😴",target:3000,seeking:1,bulk:0,salts:0,note:"Baseline maintenance — no Hydration Salts needed"},
+  {id:"walking",label:"Walking",emoji:"🚶",target:3500,seeking:1,bulk:0,salts:0,note:"Light outdoor activity — moderate sweat, Seeking Health sufficient"},
   {id:"strength",label:"Strength Training",emoji:"🏋️",target:3500,seeking:2,bulk:0,salts:0,note:"A/C gym — moderate sweat, Hydration Salts not needed"},
+  {id:"cycling",label:"Cycling",emoji:"🚴",target:4000,seeking:2,bulk:0,salts:1,note:"Moderate-high sweat outdoors — Hydration Salts warranted"},
   {id:"hiit",label:"Norwegian 4x4 HIIT",emoji:"🔥",target:4000,seeking:2,bulk:0,salts:1,note:"High intensity — front-load before session"},
+  {id:"bike",label:"Bike + Training",emoji:"🚴",target:4250,seeking:2,bulk:1,salts:1,note:"Double activity — highest electrolyte day"},
   {id:"walk_golf",label:"Walking Golf",emoji:"⛳",target:4750,seeking:2,bulk:0,salts:1,note:"4+ hrs outdoors — high sweat, Hydration Salts warranted"},
   {id:"cart_golf",label:"Cart Golf + Beers",emoji:"🍺",target:5000,seeking:2,bulk:0,salts:1,note:"Alcohol dehydrates — Hydration Salts warranted"},
   {id:"gym_cart_golf",label:"Gym + Cart Golf",emoji:"🏋️⛳",target:5250,seeking:2,bulk:1,salts:1,note:"Double session — front-load electrolytes"},
-  {id:"bike",label:"Bike + Training",emoji:"🚴",target:4250,seeking:2,bulk:1,salts:1,note:"Double activity — highest electrolyte day"},
   {id:"ruck",label:"Ruck",emoji:"🎒",target:5250,seeking:2,bulk:0,salts:1,note:"Weighted outdoor carry — peak sweat demand"},
 ];
 const CIG_PLAN=[2,1.5,1,0.5,0];
@@ -307,7 +336,7 @@ const CAFF_SOURCES=[
   {id:"tea",label:"Tea",emoji:"🍵",mg:40,mag:0,sodium:0,potassium:0},
 ];
 const ELEC_PRODUCTS=[
-  {id:"seeking",label:"Seeking Health",sub:"Optimal Electrolyte — restock on order",color:"#c084fc",rgb:"192,132,252",outOfStock:true,
+  {id:"seeking",label:"Seeking Health",sub:"Optimal Electrolyte",color:"#c084fc",rgb:"192,132,252",outOfStock:false,
    minerals:["Potassium","Magnesium","Sodium"],mfn:(s)=>[s*500,s*125,s*150],hint:"Auto-logs +450ml water 💧 · Take with breakfast or pre-training"},
   {id:"bulk",label:"Bulk Nutrients Caps",sub:"Electrolyte Caps · 4 caps = 1 serve",color:"#fb923c",rgb:"251,146,60",outOfStock:false,
    minerals:["Potassium","Magnesium","Sodium"],mfn:(s)=>[Math.round(s*139.5),s*127,s*113],hint:"4 caps per serve · also contains 88.8mg calcium"},
@@ -315,12 +344,13 @@ const ELEC_PRODUCTS=[
    minerals:["Sodium","Potassium","Magnesium"],mfn:(s)=>[s*1014,s*200,s*60],hint:"Auto-logs +450ml water 💧 · High-sweat sessions only — adds ~1,000mg Na"},
 ];
 const SUPPS=[
-  {id:"omega",label:"Nordic Naturals Ultimate Omega",emoji:"🐟",dose:"2 softgels · 1280mg Omega-3",sub:"Heart, brain & immune health",color:"56,189,248",tip:"Take with a meal containing fat for best absorption"},
-  {id:"theanineAM",label:"L-Theanine · Morning",emoji:"🧘",dose:"1 cap · 200mg",sub:"Calm focus — pairs with morning coffee",color:"167,139,250",tip:"Take with your morning caffeine for smooth, jitter-free energy"},
-  {id:"theaninePM",label:"L-Theanine · Night",emoji:"🌙",dose:"1 cap · 200mg",sub:"Wind down · stress relief",color:"167,139,250",tip:"Take after dinner to ease into wind-down mode"},
-  {id:"vitb",label:"Herbs of Gold B Complete",emoji:"⚡",dose:"1 tablet · sustained release 8hrs",sub:"Energy, mood & nervous system",color:"251,191,36",tip:"Take with food in the morning for all-day energy"},
-  {id:"creatine",label:"Creatine Monohydrate",emoji:"💪",dose:"8g",sub:"Strength, power & muscle recovery",color:"251,146,60",tip:"Timing doesn't matter much — consistency is what counts"},
-  {id:"mag",label:"Magnesium Glycinate",emoji:"😴",dose:"1 cap · 150mg",sub:"Sleep, recovery & muscle function",color:"52,211,153",tip:"Best taken at night — 300mg causes restless legs; 150mg is your sweet spot"},
+  {id:"omega",label:"Nordic Naturals Ultimate Omega",emoji:"🐟",dose:"2 softgels · 1280mg Omega-3",sub:"AM · with breakfast",color:"56,189,248",tip:"Take with breakfast — fat improves absorption",group:"AM with Breakfast"},
+  {id:"theanineAM",label:"L-Theanine · Morning",emoji:"🧘",dose:"1 cap · 200mg",sub:"AM · pairs with morning coffee",color:"167,139,250",tip:"Take with morning caffeine for smooth, jitter-free energy",group:"AM with Breakfast"},
+  {id:"finasteride",label:"Finasteride",emoji:"💊",dose:"¼ tablet",sub:"AM · with breakfast",color:"96,165,250",tip:"Quarter tablet daily — take consistently at the same time",group:"AM with Breakfast"},
+  {id:"vitb",label:"Herbs of Gold B Complete",emoji:"⚡",dose:"1 tablet · sustained release 8hrs",sub:"Post-workout smoothie",color:"251,191,36",tip:"Take with your post-workout smoothie for all-day energy",group:"Post-Workout Smoothie"},
+  {id:"creatine",label:"Creatine Monohydrate",emoji:"💪",dose:"8g",sub:"Post-workout smoothie",color:"251,146,60",tip:"Add to post-workout smoothie — consistency is what counts",group:"Post-Workout Smoothie"},
+  {id:"mag",label:"Magnesium Glycinate",emoji:"😴",dose:"1 cap · 150mg",sub:"PM · before bed",color:"52,211,153",tip:"Best taken at night — 300mg causes restless legs; 150mg is your sweet spot",group:"PM Before Bed"},
+  {id:"theaninePM",label:"L-Theanine · Night",emoji:"🌙",dose:"1 cap · 200mg",sub:"PM · wind-down",color:"167,139,250",tip:"Take after dinner to ease into wind-down mode",group:"PM Before Bed"},
 ];
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -350,7 +380,23 @@ let state={
   suppTheaninePM:ld('suppTheaninePM',false),
   suppVitB:ld('suppVitB',false),
   suppMag:ld('suppMag',false),
+  suppFinasteride:ld('suppFinasteride',false),
   suppCreatine:ld('suppCreatine',false),
+  oralBrushAM:ld('oralBrushAM',false),
+  oralMouthwashAM:ld('oralMouthwashAM',false),
+  oralBrushPM:ld('oralBrushPM',false),
+  oralFlossPM:ld('oralFlossPM',false),
+  oralPickstersPM:ld('oralPickstersPM',false),
+  oralMouthwashPM:ld('oralMouthwashPM',false),
+  dailySteps:ld('dailySteps',0),
+  screenTimeMins:ld('screenTimeMins',0),
+  caffOverride:false,
+  drinkOverride:false,
+  habitMeditation:ld('habitMeditation',false),
+  habitPliability:ld('habitPliability',false),
+  habitStrengthMins:ldw('habitStrengthMins',0),
+  habitZone13Mins:ldw('habitZone13Mins',0),
+  habitZone45Mins:ldw('habitZone45Mins',0),
   activeTab:'water',
 };
 
@@ -362,7 +408,16 @@ function saveAll(){
   sd('caffLog',state.caffLog);
   sd('suppOmega',state.suppOmega);sd('suppTheanineAM',state.suppTheanineAM);
   sd('suppTheaninePM',state.suppTheaninePM);sd('suppVitB',state.suppVitB);
-  sd('suppMag',state.suppMag);sd('suppCreatine',state.suppCreatine);
+  sd('suppMag',state.suppMag);sd('suppFinasteride',state.suppFinasteride);sd('suppCreatine',state.suppCreatine);
+  sd('oralBrushAM',state.oralBrushAM);sd('oralMouthwashAM',state.oralMouthwashAM);
+  sd('oralBrushPM',state.oralBrushPM);sd('oralFlossPM',state.oralFlossPM);
+  sd('oralPickstersPM',state.oralPickstersPM);sd('oralMouthwashPM',state.oralMouthwashPM);
+  sd('dailySteps',state.dailySteps);
+  sd('screenTimeMins',state.screenTimeMins);
+  sd('habitMeditation',state.habitMeditation);sd('habitPliability',state.habitPliability);
+  sdw('habitStrengthMins',state.habitStrengthMins);
+  sdw('habitZone13Mins',state.habitZone13Mins);
+  sdw('habitZone45Mins',state.habitZone45Mins);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -392,14 +447,14 @@ document.getElementById('day-btn').onclick=()=>setShowDD(!ddOpen);
 document.addEventListener('click',e=>{if(!e.target.closest('.day-selector'))setShowDD(false);});
 
 // Tabs
-const TABS=[{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'supps',emoji:'💊',title:'Supps'},{id:'history',emoji:'📅',title:'History'}];
+const TABS=[{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'supps',emoji:'💊',title:'Supps'},{id:'oral',emoji:'🦷',title:'Oral'},{id:'habits',emoji:'🏃',title:'Habits'},{id:'screentime',emoji:'📱',title:'Screen'},{id:'history',emoji:'📅',title:'History'}];
 const tabsEl=document.getElementById('tabs');
 TABS.forEach(t=>{
   const b=document.createElement('button');
   b.className='tab'+(t.id===state.activeTab?' active':'');
   b.id='tab-'+t.id;
   b.innerHTML=`<span class="tab-icon">${t.emoji}</span><span>${t.title}</span>`;
-  b.onclick=()=>{state.activeTab=t.id;TABS.forEach(x=>{document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');document.getElementById('panel-'+x.id).className='panel'+(x.id===t.id?' active':'');});if(t.id==='history'){saveSnapshot();renderHistory();}};
+  b.onclick=()=>{state.activeTab=t.id;TABS.forEach(x=>{document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');document.getElementById('panel-'+x.id).className='panel'+(x.id===t.id?' active':'');});if(t.id==='history'){saveSnapshot();renderHistory();}if(t.id==='oral'){renderOral();}if(t.id==='habits'){renderHabits();}if(t.id==='screentime'){renderScreenTime();}if(t.id==='history'){saveSnapshot();renderHistory();}};
   tabsEl.appendChild(b);
 });
 
@@ -411,7 +466,12 @@ document.getElementById('reset-btn').onclick=()=>{
   state.water=0;state.seeking=0;state.bulk=0;state.salts=0;
   state.sessionDrinks=0;state.cigs=0;state.caffLog=[];
   state.suppOmega=false;state.suppTheanineAM=false;state.suppTheaninePM=false;
-  state.suppVitB=false;state.suppMag=false;state.suppCreatine=false;
+  state.suppVitB=false;state.suppMag=false;state.suppFinasteride=false;state.suppCreatine=false;
+  state.oralBrushAM=false;state.oralMouthwashAM=false;
+  state.oralBrushPM=false;state.oralFlossPM=false;state.oralPickstersPM=false;state.oralMouthwashPM=false;
+  state.dailySteps=0;
+  state.screenTimeMins=0;
+  state.habitMeditation=false;state.habitPliability=false;
   saveAll();render();
 };
 
@@ -425,7 +485,7 @@ function showDrinkWarn(msg){
 }
 function addDrink(amt){
   const h=now().getHours();
-  if(h>=20){showDrinkWarn('⏰ It\'s past 8pm — no more drinks tonight!');return;}
+  if(h>=20&&!state.drinkOverride){showDrinkWarn('⏰ It\'s past 8pm — tap Override to log anyway.');return;}
   if(state.sessionDrinks>=4){showDrinkWarn('🚫 4 std drink session limit reached.');return;}
   if(state.weekDrinks>=10){showDrinkWarn('🚫 10 std drink weekly limit reached.');return;}
   state.sessionDrinks=Math.round((state.sessionDrinks+amt)*10)/10;
@@ -451,6 +511,12 @@ document.getElementById('cig-restart').onclick=()=>{if(confirm('Restart the redu
 
 // Caffeine
 document.getElementById('caff-clear').onclick=()=>{if(confirm('Clear caffeine log?')){state.caffLog=[];saveAll();render();}};
+document.addEventListener('click',e=>{
+  if(e.target.id==='caff-override-btn'){state.caffOverride=true;renderCaff();}
+  if(e.target.id==='caff-override-cancel'){state.caffOverride=false;renderCaff();}
+  if(e.target.id==='drink-override-btn'){state.drinkOverride=true;renderDrinks();}
+  if(e.target.id==='drink-override-cancel'){state.drinkOverride=false;renderDrinks();}
+});
 
 // ─── Render Electrolytes ──────────────────────────────────────────────────────
 function renderElec(){
@@ -540,11 +606,13 @@ function renderTotals(){
 // ─── Render Caffeine ──────────────────────────────────────────────────────────
 function renderCaff(){
   const h=now().getHours(),mins=now().getMinutes();
-  const pastCut=h>=13,minsLeft=pastCut?0:(13-h)*60-mins;
+  const pastCutRaw=h>=13,minsLeft=pastCutRaw?0:(13-h)*60-mins;
+  const pastCut=pastCutRaw&&!state.caffOverride;
   const totalMg=state.caffLog.reduce((s,e)=>s+e.mg,0);
   const over=totalMg>400;
   const banner=document.getElementById('caff-banner');
-  if(pastCut){banner.innerHTML=`<div style="background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.35);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:13px;color:#ef5350;font-weight:bold">⏰ 1pm cutoff passed</div><div style="font-size:10px;color:#9a4a48;margin-top:2px">No more caffeine — 9+ hrs to clear before bed 👍</div></div>`;}
+  if(pastCutRaw&&!state.caffOverride){banner.innerHTML=`<div style="background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.35);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:13px;color:#ef5350;font-weight:bold">⏰ 1pm cutoff passed</div><div style="font-size:10px;color:#9a4a48;margin-top:2px">No more caffeine — 9+ hrs to clear before bed 👍</div><button id="caff-override-btn" style="margin-top:8px;font-size:10px;color:#ef9090;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4);border-radius:7px;padding:5px 12px;cursor:pointer">⚠️ Override — log anyway</button></div>`;}
+  else if(pastCutRaw&&state.caffOverride){banner.innerHTML=`<div style="background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.4);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:12px;color:#fbbf24;font-weight:bold">⚠️ Override active — logging after cutoff</div><div style="font-size:10px;color:#9a7a30;margin-top:2px">This will affect your sleep recovery score</div><button id="caff-override-cancel" style="margin-top:6px;font-size:10px;color:#9a7a30;background:none;border:1px solid rgba(251,191,36,.3);border-radius:7px;padding:4px 10px;cursor:pointer">Cancel override</button></div>`;}
   else if(minsLeft<=60){banner.innerHTML=`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:12px;color:#fbbf24">⚠️ Cutoff in ${minsLeft}m — last call for caffeine</div></div>`;}
   else{banner.innerHTML=`<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.18);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:11px;color:#4ade80">✓ Cutoff at 1pm · ${Math.floor(minsLeft/60)}h ${minsLeft%60}m remaining</div></div>`;}
   document.getElementById('caff-total').innerHTML=`${totalMg}<span style="font-size:12px;color:#3a6a4a">mg</span>`;
@@ -576,21 +644,23 @@ function renderCaff(){
 
 // ─── Render Supps ─────────────────────────────────────────────────────────────
 function renderSupps(){
-  const vals={omega:state.suppOmega,theanineAM:state.suppTheanineAM,theaninePM:state.suppTheaninePM,vitb:state.suppVitB,creatine:state.suppCreatine,mag:state.suppMag};
+  const vals={omega:state.suppOmega,theanineAM:state.suppTheanineAM,theaninePM:state.suppTheaninePM,vitb:state.suppVitB,creatine:state.suppCreatine,mag:state.suppMag,finasteride:state.suppFinasteride};
   const done=Object.values(vals).filter(Boolean).length;
-  const all=done===5;
+  const all=done===7;
   document.getElementById('supp-title').textContent=all?'All done today! 🎉':'Daily Supplements';
-  document.getElementById('supp-count').innerHTML=`${done}<span style="font-size:13px;color:#4a4a8a">/5</span>`;
+  document.getElementById('supp-count').innerHTML=`${done}<span style="font-size:13px;color:#4a4a8a">/7</span>`;
   document.getElementById('supp-count').style.color=all?'#00e5a0':'#818cf8';
   document.getElementById('supp-header').style.background=all?'rgba(129,140,248,.12)':'rgba(129,140,248,.06)';
   document.getElementById('supp-header').style.borderColor=`rgba(129,140,248,${all?.45:.2})`;
   const prog=document.getElementById('supp-prog');
-  const keys=['omega','theanineAM','theaninePM','vitb','creatine','mag'];
+  const keys=['omega','theanineAM','finasteride','vitb','creatine','mag','theaninePM'];
   prog.innerHTML=keys.map(k=>`<div class="prog-seg" style="background:${vals[k]?(all?'#00e5a0':'#818cf8'):'rgba(129,140,248,.12)'}"></div>`).join('');
   const cards=document.getElementById('supp-cards');
   cards.innerHTML='';
+  let lastGroup='';
   SUPPS.forEach(s=>{
-    const key2=s.id==='mag'?'suppMag':`supp${s.id.charAt(0).toUpperCase()+s.id.slice(1)}`;const taken=!!state[key2];
+    if(s.group&&s.group!==lastGroup){lastGroup=s.group;const gh=document.createElement('div');gh.style.cssText='font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin:14px 0 6px;padding-left:2px';gh.textContent=s.group;cards.appendChild(gh);}
+    const key2=s.id==='mag'?'suppMag':s.id==='finasteride'?'suppFinasteride':`supp${s.id.charAt(0).toUpperCase()+s.id.slice(1)}`;const taken=!!state[key2];
     const div=document.createElement('div');
     div.className='supp-card';
     div.style.cssText=`background:${taken?`rgba(${s.color},.12)`:`rgba(${s.color},.04)`};border:1.5px solid rgba(${s.color},${taken?.45:.18})`;
@@ -611,7 +681,7 @@ function renderSupps(){
   cards.querySelectorAll('.supp-toggle').forEach(b=>{
     b.onclick=()=>{
       const sid=b.dataset.sid;
-      const key=sid==='mag'?'suppMag':`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
+      const key=sid==='mag'?'suppMag':sid==='finasteride'?'suppFinasteride':`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
       state[key]=!state[key];saveAll();renderSupps();renderTotals();
     };
   });
@@ -656,10 +726,12 @@ function renderWater(){
 // ─── Render Drinks ────────────────────────────────────────────────────────────
 function renderDrinks(){
   const h=now().getHours(),mins=now().getMinutes();
-  const pastCut=h>=20,minsLeft=pastCut?0:(20-h)*60-mins;
+  const pastCutRaw=h>=20,minsLeft=pastCutRaw?0:(20-h)*60-mins;
+  const pastCut=pastCutRaw&&!state.drinkOverride;
   const blocked=pastCut||state.sessionDrinks>=4||state.weekDrinks>=10;
   const banner=document.getElementById('drink-cutoff-banner');
-  if(pastCut)banner.innerHTML=`<div class="warning-banner" style="background:rgba(239,83,80,.12);border:1.5px solid rgba(239,83,80,.4)"><div style="font-size:14px;color:#ef5350;font-weight:bold">⏰ 8pm cutoff reached</div><div style="font-size:11px;color:#9a4a48;margin-top:2px">No more drinks tonight — 2hrs to wind down before bed.</div></div>`;
+  if(pastCutRaw&&!state.drinkOverride)banner.innerHTML=`<div class="warning-banner" style="background:rgba(239,83,80,.12);border:1.5px solid rgba(239,83,80,.4)"><div style="font-size:14px;color:#ef5350;font-weight:bold">⏰ 8pm cutoff reached</div><div style="font-size:11px;color:#9a4a48;margin-top:2px">No more drinks tonight — 2hrs to wind down before bed.</div><button id="drink-override-btn" style="margin-top:8px;font-size:10px;color:#ef9090;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4);border-radius:7px;padding:5px 12px;cursor:pointer">⚠️ Override — log anyway</button></div>`;
+  else if(pastCutRaw&&state.drinkOverride)banner.innerHTML=`<div class="warning-banner" style="background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.4)"><div style="font-size:13px;color:#fbbf24;font-weight:bold">⚠️ Override active — logging after cutoff</div><div style="font-size:10px;color:#9a7a30;margin-top:2px">Alcohol after 8pm = -17% Whoop recovery</div><button id="drink-override-cancel" style="margin-top:6px;font-size:10px;color:#9a7a30;background:none;border:1px solid rgba(251,191,36,.3);border-radius:7px;padding:4px 10px;cursor:pointer">Cancel override</button></div>`;
   else if(minsLeft<=120)banner.innerHTML=`<div class="warning-banner" style="background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35)"><div style="font-size:12px;color:#fbbf24">⚠️ 8pm cutoff in ${Math.floor(minsLeft/60)}h ${minsLeft%60}m — wrap it up soon</div></div>`;
   else banner.innerHTML='';
   const sc2=document.getElementById('session-card');
@@ -733,6 +805,11 @@ function saveSnapshot(){
     cigs:state.cigs,
     caffMg:state.caffLog.reduce((s,e)=>s+e.mg,0),
     supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag].filter(Boolean).length,
+    dailySteps:state.dailySteps,
+    screenTimeMins:state.screenTimeMins,
+    suppK:(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200),
+    suppNa:(state.seeking*150)+(state.bulk*113)+(state.salts*1014),
+    suppMg:(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(state.suppMag?150:0),
   };
   try{localStorage.setItem('snap_'+today,JSON.stringify(snap));}catch{}
 }
@@ -740,7 +817,7 @@ function saveSnapshot(){
 function renderHistory(){
   const list=document.getElementById('history-list');
   const entries=[];
-  for(let i=0;i<30;i++){
+  for(let i=0;i<35;i++){
     const d=new Date();d.setDate(d.getDate()-i);
     const key=d.toDateString();
     if(key===today){
@@ -751,7 +828,12 @@ function renderHistory(){
         water:state.water,waterTarget:targetWater,dayType:dt.label,
         drinks:state.sessionDrinks,cigs:state.cigs,
         caffMg:state.caffLog.reduce((s,e)=>s+e.mg,0),
-        supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag].filter(Boolean).length,
+        supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag,state.suppFinasteride].filter(Boolean).length,
+        dailySteps:state.dailySteps,
+    screenTimeMins:state.screenTimeMins,
+    suppK:(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200),
+        suppNa:(state.seeking*150)+(state.bulk*113)+(state.salts*1014),
+        suppMg:(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(state.suppMag?150:0),
         isToday:true,
       });
     } else {
@@ -771,15 +853,360 @@ function renderHistory(){
         <div style="font-size:11px;font-weight:bold;color:${wcolor}">${wpct}% hydrated</div>
       </div>
       <div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;margin-bottom:10px"><div style="height:100%;width:${wpct}%;background:${wcolor};border-radius:3px"></div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-        <div style="text-align:center"><div style="font-size:13px;font-weight:bold;color:#4fc3f7">${fml(e.water)}</div><div style="font-size:9px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Water</div></div>
-        <div style="text-align:center"><div style="font-size:13px;font-weight:bold;color:#f472b6">${fmt05(e.drinks)}</div><div style="font-size:9px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Drinks</div></div>
-        <div style="text-align:center"><div style="font-size:13px;font-weight:bold;color:#4ade80">${e.caffMg}mg</div><div style="font-size:9px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Caffeine</div></div>
-        <div style="text-align:center"><div style="font-size:13px;font-weight:bold;color:#818cf8">${e.supps}/5</div><div style="font-size:9px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Supps</div></div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px">
+        <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4fc3f7">${fml(e.water)}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Water</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#f472b6">${fmt05(e.drinks)}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Drinks</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4ade80">${e.caffMg}mg</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Caffeine</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#818cf8">${e.supps}/7</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Supps</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4ade80">${(e.dailySteps||0).toLocaleString()}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Steps</div></div>
+        <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:${(e.screenTimeMins||0)>30?'#ef5350':'#4ade80'}">${e.screenTimeMins||0}m</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Screen</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px">
+        <div style="text-align:center;background:rgba(0,0,0,.15);border-radius:7px;padding:5px 3px"><div style="font-size:11px;font-weight:bold;color:#a78bfa">${e.suppK||0}mg</div><div style="font-size:8px;color:#4a3a6a;text-transform:uppercase;margin-top:1px">K</div></div>
+        <div style="text-align:center;background:rgba(0,0,0,.15);border-radius:7px;padding:5px 3px"><div style="font-size:11px;font-weight:bold;color:#fb923c">${e.suppNa||0}mg</div><div style="font-size:8px;color:#6a3a1a;text-transform:uppercase;margin-top:1px">Na</div></div>
+        <div style="text-align:center;background:rgba(0,0,0,.15);border-radius:7px;padding:5px 3px"><div style="font-size:11px;font-weight:bold;color:#34d399">${e.suppMg||0}mg</div><div style="font-size:8px;color:#1a4a3a;text-transform:uppercase;margin-top:1px">Mg</div></div>
       </div>
       <div style="font-size:10px;color:${e.cigs>0?'#fbbf24':'#2a4a5a'};margin-top:8px;text-align:center">🚬 ${e.cigs>0?fmt05(e.cigs)+' smoked':'No smokes'}</div>
     </div>`;
   }).join('');
+}
+
+// ─── Share Summary ───────────────────────────────────────────────────────────
+
+// ─── Render Screen Time ───────────────────────────────────────────────────────
+function renderScreenTime(){
+  const container=document.getElementById('screentime-cards');
+  if(!container)return;
+  container.innerHTML='';
+  const goal=30;
+  const mins=state.screenTimeMins;
+  const over=mins>goal;
+  const pct=Math.min((mins/goal)*100,100);
+  const color=mins===0?'#4fc3f7':mins<=goal?'#4ade80':mins<=60?'#fbbf24':'#ef5350';
+  const statusMsg=mins===0?'Not logged yet':mins<=30?'Within goal \u2714\ufe0f':mins<=60?'Over goal \u2014 reduce tomorrow':'High usage \u2014 dopamine impact likely';
+
+  const hdr=document.createElement('div');
+  hdr.style.cssText='background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic';
+  hdr.textContent='30 min/day goal \xb7 protect dopamine baseline & presence with family';
+  container.appendChild(hdr);
+
+  const card=document.createElement('div');
+  card.style.cssText='background:'+(over?'rgba(239,83,80,.08)':'rgba(74,222,128,.05)')+';border:1.5px solid '+(over?'rgba(239,83,80,.4)':'rgba(74,222,128,.2)')+';border-radius:16px;padding:16px;margin-bottom:12px';
+  card.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:15px;font-weight:bold;color:'+color+'">📱 Social Media Today</div><div style="font-size:10px;color:#2a5a3a;margin-top:1px">Goal: 30 min \xb7 set via Brick Blocker</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:'+color+'">'+mins+'<span style="font-size:12px">m</span></div><div style="font-size:9px;color:#3a5a4a">of 30m goal</div></div></div>'
+    +'<div style="height:10px;background:rgba(255,255,255,.06);border-radius:5px;margin-bottom:8px"><div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:5px;transition:width .4s"></div></div>'
+    +'<div style="font-size:11px;color:'+color+';text-align:center;margin-bottom:12px">'+statusMsg+'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
+    +'<button data-sm="10" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+10m</button>'
+    +'<button data-sm="30" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+30m</button>'
+    +'<button data-sm="60" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:#fbbf24;cursor:pointer">+1h</button>'
+    +'<button data-sm="-15" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(239,83,80,.28);background:rgba(239,83,80,.07);color:#ef9090;cursor:pointer">-15m</button>'
+    +'</div>';
+  container.appendChild(card);
+  card.querySelectorAll('button[data-sm]').forEach(b=>{
+    b.onclick=()=>{state.screenTimeMins=Math.max(0,state.screenTimeMins+parseInt(b.dataset.sm));saveAll();renderScreenTime();};
+  });
+
+  const sci=document.createElement('div');
+  sci.style.cssText='background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  sci.innerHTML='<div style="font-size:12px;font-weight:bold;color:#4fc3f7;margin-bottom:8px">Why 30 min? \ud83e\udde0</div>'
+    +'<div style="font-size:11px;color:#3a6a7a;line-height:1.7">'
+    +'<div style="margin-bottom:5px">\u2022 <span style="color:#b0d0e8">Dopamine baseline:</span> Passive scrolling recalibrates reward thresholds upward \u2014 real life feels less satisfying.</div>'
+    +'<div style="margin-bottom:5px">\u2022 <span style="color:#b0d0e8">Cortisol spikes:</span> Notifications trigger micro stress responses that accumulate and disrupt sleep architecture.</div>'
+    +'<div style="margin-bottom:5px">\u2022 <span style="color:#b0d0e8">Presence cost:</span> Each phone interruption takes 20+ min to regain deep focus. With family the cost is felt, not measured.</div>'
+    +'<div>\u2022 <span style="color:#b0d0e8">The threshold:</span> Under 30m/day = negligible wellbeing impact. Over 2h/day = measurable reduction in life satisfaction.</div>'
+    +'</div>';
+  container.appendChild(sci);
+
+  const brick=document.createElement('div');
+  brick.style.cssText='background:rgba(129,140,248,.04);border:1px solid rgba(129,140,248,.18);border-radius:12px;padding:11px 14px;margin-bottom:12px';
+  brick.innerHTML='<div style="font-size:11px;font-weight:bold;color:#818cf8;margin-bottom:4px">\ud83e\uddf1 Brick Blocker tip</div><div style="font-size:10px;color:#3a3a7a;line-height:1.6">Set your limit to 30 min on Instagram & similar. Make it hard to override \u2014 the friction is the feature. Morning and pre-bed windows matter most for sleep and recovery.</div>';
+  container.appendChild(brick);
+
+  const intent=document.createElement('div');
+  intent.style.cssText='background:rgba(167,139,250,.04);border:1px solid rgba(167,139,250,.18);border-radius:12px;padding:11px 14px';
+  intent.innerHTML='<div style="font-size:11px;font-weight:bold;color:#a78bfa;margin-bottom:4px">Decade intention \u2728</div><div style="font-size:10px;color:#4a3a7a;line-height:1.6">Present with family. Focused at work. Smoke-free. Pace of aging trending down. This limit compounds every day.</div>';
+  container.appendChild(intent);
+}
+
+function buildShareText(){
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
+  const target=dt.target+(state.sessionDrinks*250);
+  const pct=Math.round((state.water/target)*100);
+  const pw=state.caffLog.filter(e=>e.sourceId==='preworkout').length;
+  const suppK=(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200)+(pw*100);
+  const suppNa=(state.seeking*150)+(state.bulk*113)+(state.salts*1014)+(pw*50);
+  const suppMg=(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(pw*50)+(state.suppMag?150:0);
+  const caffMg=state.caffLog.reduce((s,e)=>s+e.mg,0);
+  const suppsDone=[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag,state.suppFinasteride].filter(Boolean).length;
+  const dateStr=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+  return [
+    `📊 Stef's Health Log — ${dateStr}`,
+    `🏷️ Day type: ${dt.label}`,
+    ``,
+    `💧 Hydration: ${pct}% (${fml(state.water)} / ${fml(target)})`,
+    `☕ Caffeine: ${caffMg}mg`,
+    `💊 Supps: ${suppsDone}/7`,
+    `🚬 Smokes: ${state.cigs>0?fmt05(state.cigs)+' today':'None'}`,
+    `🍻 Drinks: ${fmt05(state.sessionDrinks)} today / ${fmt05(state.weekDrinks)} this week`,
+    ``,
+    `⚡ Electrolytes (supps only):`,
+    `  Potassium: ${suppK}mg`,
+    `  Sodium: ${suppNa}mg (est. total ~${suppNa+2200}mg incl. food)`,
+    `  Magnesium: ${suppMg}mg`,
+    ``,
+    `🚶 Steps: ${state.dailySteps.toLocaleString()} / 12,000 goal`,
+    `📱 Screen time: ${state.screenTimeMins}min / 30min goal`,
+    `🦷 Oral: AM ${[state.oralBrushAM,state.oralMouthwashAM].filter(Boolean).length}/2 · PM ${[state.oralBrushPM,state.oralFlossPM,state.oralPickstersPM,state.oralMouthwashPM].filter(Boolean).length}/4`,
+    `🏃 Habits: ${state.habitMeditation?'✓':'✗'} Meditation · ${state.habitPliability?'✓':'✗'} Pliability`,
+    `  Strength: ${state.habitStrengthMins}min this week / 150min goal`,
+    `  Zone 1-3: ${state.habitZone13Mins}min this week / 150min goal`,
+    `  Zone 4-5: ${state.habitZone45Mins}min this week / 50min goal`,
+  ].join('\n');
+}
+
+document.addEventListener('click',e=>{
+  if(e.target.id==='export-week-btn'||e.target.id==='export-april-btn'){
+    const isApril=e.target.id==='export-april-btn';
+    const rows=['Date,Day Type,Water%,Water(ml),Drinks,Caffeine(mg),Supps,Steps,Screen(min),Smokes,K(mg),Na(mg),Mg(mg)'];
+    const days=isApril?35:7;
+    for(let i=days-1;i>=0;i--){
+      const d=new Date();d.setDate(d.getDate()-i);
+      if(isApril&&(d.getMonth()!==2&&d.getMonth()!==3))continue; // March+April only
+      const key=d.toDateString();
+      let entry=null;
+      if(key===new Date().toDateString()){
+        const dt=DAY_TYPES.find(x=>x.id===state.dayTypeId)||DAY_TYPES[0];
+        const tw=dt.target+(state.sessionDrinks*250);
+        entry={dateLabel:d.toLocaleDateString('en-AU',{day:'numeric',month:'short'}),dayType:dt.label,water:state.water,waterTarget:tw,drinks:state.sessionDrinks,caffMg:state.caffLog.reduce((s,e)=>s+e.mg,0),supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag].filter(Boolean).length,dailySteps:state.dailySteps,screenTimeMins:state.screenTimeMins,cigs:state.cigs,suppK:(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200),suppNa:(state.seeking*150)+(state.bulk*113)+(state.salts*1014),suppMg:(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(state.suppMag?150:0)};
+      } else {
+        try{const v=localStorage.getItem('snap_'+key);if(v)entry={...JSON.parse(v)};}catch{}
+      }
+      if(entry){
+        const wpct=Math.round((entry.water/(entry.waterTarget||3000))*100);
+        rows.push([entry.dateLabel,'"'+entry.dayType+'"',wpct+'%',entry.water,fmt05(entry.drinks||0),entry.caffMg||0,entry.supps||0,entry.dailySteps||0,entry.screenTimeMins||0,fmt05(entry.cigs||0),entry.suppK||0,entry.suppNa||0,entry.suppMg||0].join(','));
+      }
+    }
+    const csv=rows.join('\n');
+    const title=isApril?'April Health Export':'Weekly Health Export';
+    navigator.clipboard.writeText(csv).then(()=>{
+      const fb=document.getElementById('share-feedback');
+      fb.textContent='✓ '+title+' copied! Paste into Excel/Sheets.';
+      fb.style.display='block';
+      setTimeout(()=>{fb.style.display='none';fb.textContent='✓ Copied to clipboard!';},3000);
+    }).catch(()=>prompt('Copy CSV:',csv));
+    return;
+  }
+  if(e.target.id==='share-btn'){
+    const text=buildShareText();
+    navigator.clipboard.writeText(text).then(()=>{
+      const fb=document.getElementById('share-feedback');
+      fb.style.display='block';
+      setTimeout(()=>fb.style.display='none',2500);
+    }).catch(()=>{
+      prompt('Copy this summary:',text);
+    });
+  }
+});
+
+
+// ─── Render Oral ──────────────────────────────────────────────────────────────
+function renderOral(){
+  const amItems=[
+    {key:'oralBrushAM',emoji:'🪥',label:'Brush Teeth',dose:'2 min · 3 sec/tooth',tip:'Fluoride toothpaste · all surfaces'},
+    {key:'oralMouthwashAM',emoji:'💧',label:'Mouthwash',dose:'30 sec swish',tip:'After brushing · spit, don\'t rinse after'},
+  ];
+  const pmItems=[
+    {key:'oralFlossPM',emoji:'🧵',label:'Floss',dose:'Once daily · all gaps',tip:'Floss first — loosens debris for brushing to sweep away'},
+    {key:'oralPickstersPM',emoji:'🦯',label:'Picksters',dose:'Interdental brush · all gaps',tip:'After flossing — gets what floss misses'},
+    {key:'oralBrushPM',emoji:'🪥',label:'Brush Teeth',dose:'2 min · 3 sec/tooth',tip:'Brush after flossing to sweep away loosened debris'},
+    {key:'oralMouthwashPM',emoji:'💧',label:'Mouthwash',dose:'30 sec swish',tip:'After brushing · don\'t eat/drink after'},
+  ];
+  const amDone=amItems.filter(i=>state[i.key]).length;
+  const pmDone=pmItems.filter(i=>state[i.key]).length;
+  const totalDone=amDone+pmDone;
+  const totalItems=amItems.length+pmItems.length;
+  const allDone=totalDone===totalItems;
+
+  const container=document.getElementById('oral-cards');
+  container.innerHTML='';
+
+  // Header
+  const hdr=document.createElement('div');
+  hdr.style.cssText='border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:'+(allDone?'rgba(56,189,248,.12)':'rgba(56,189,248,.06)')+';border:1.5px solid rgba(56,189,248,'+(allDone?.45:.2)+')';
+  hdr.innerHTML='<div><div style="font-size:14px;font-weight:bold;color:#38bdf8">'+(allDone?'Mouth done! 🦷':'Oral Hygiene')+'</div><div style="font-size:10px;color:#2a5a6a;margin-top:2px">Tap each when done</div></div><div style="font-size:26px;font-weight:bold;color:'+(allDone?'#00e5a0':'#38bdf8')+'">'+totalDone+'<span style="font-size:13px;color:#2a5a6a">/'+totalItems+'</span></div>';
+  container.appendChild(hdr);
+
+  // Progress bar
+  const pb=document.createElement('div');
+  pb.style.cssText='display:flex;gap:6px;margin-bottom:18px';
+  pb.innerHTML=Array.from({length:totalItems},(_,i)=>'<div style="flex:1;height:6px;border-radius:3px;background:'+(i<totalDone?(allDone?'#00e5a0':'#38bdf8'):'rgba(56,189,248,.12)')+'"></div>').join('');
+  container.appendChild(pb);
+
+  function makeSection(title,emoji,items,done,total){
+    const sec=document.createElement('div');
+    sec.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+    sec.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:bold;color:#38bdf8">'+emoji+' '+title+'</div><div style="font-size:11px;color:'+(done===total?'#00e5a0':'#4a7a9b')+'">'+done+'/'+total+'</div></div>';
+    items.forEach(it=>{
+      const taken=state[it.key];
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)';
+      row.innerHTML='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">'+it.emoji+'</span><div><div style="font-size:13px;font-weight:bold;color:rgba(56,189,248,'+(taken?1:.7)+')">'+(taken?'✓ ':'')+it.label+'</div><div style="font-size:10px;color:#2a5a6a;margin-top:1px">'+it.dose+'</div></div></div><div style="font-size:9px;color:#1a4a5a;margin-top:3px;padding-left:24px">'+it.tip+'</div></div><button data-okey="'+it.key+'" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;border:1.5px solid rgba(56,189,248,'+(taken?.6:.3)+');background:'+(taken?'rgba(56,189,248,.25)':'rgba(56,189,248,.07)')+';color:#38bdf8;cursor:pointer">'+(taken?'✓':'○')+'</button>';
+      sec.appendChild(row);
+    });
+    return sec;
+  }
+  container.appendChild(makeSection('Morning Routine','☀️',amItems,amDone,amItems.length));
+  container.appendChild(makeSection('Evening Routine','🌙',pmItems,pmDone,pmItems.length));
+
+  container.querySelectorAll('button[data-okey]').forEach(b=>{
+    b.onclick=()=>{state[b.dataset.okey]=!state[b.dataset.okey];saveAll();renderOral();};
+  });
+}
+
+// ─── Render Habits ────────────────────────────────────────────────────────────
+const WEEKLY_GOALS={strength:150,zone13:150,zone45:50};
+const SESSION_MINS={strength:40,zone13:60,zone45:5};
+
+function renderHabits(){
+  const container=document.getElementById('habits-cards');
+  container.innerHTML='';
+
+  // ── Steps card ──
+  const stepsGoal=12000;
+  const stepsPct=Math.min((state.dailySteps/stepsGoal)*100,100);
+  const stepsColor=state.dailySteps>=stepsGoal?'#00e5a0':state.dailySteps>=7500?'#4ade80':state.dailySteps>=5000?'#fbbf24':'#fb923c';
+  const stepsCard=document.createElement('div');
+  stepsCard.style.cssText='background:rgba(74,222,128,.05);border:1.5px solid rgba(74,222,128,'+(state.dailySteps>=stepsGoal?.45:.2)+');border-radius:16px;padding:16px;margin-bottom:12px';
+  stepsCard.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <div style="font-size:14px;font-weight:bold;color:#4ade80">🚶 Daily Steps</div>
+        <div style="font-size:10px;color:#2a5a3a;margin-top:1px">Goal: 12,000 · Whoop optimal · +500/week from 8K current avg</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:22px;font-weight:bold;color:${stepsColor}">${state.dailySteps.toLocaleString()}</div>
+        <div style="font-size:9px;color:#2a4a3a">${state.dailySteps>=stepsGoal?'✓ Goal reached!':((stepsGoal-state.dailySteps).toLocaleString()+' to go')}</div>
+      </div>
+    </div>
+    <div style="height:8px;background:rgba(74,222,128,.1);border-radius:4px;margin-bottom:12px">
+      <div style="height:100%;width:${stepsPct}%;background:${stepsColor};border-radius:4px;transition:width .4s"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+      <button data-steps="1000" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+1K</button>
+      <button data-steps="2000" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+2K</button>
+      <button data-steps="5000" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+5K</button>
+      <button data-steps="-1000" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(239,83,80,.28);background:rgba(239,83,80,.07);color:#ef9090;cursor:pointer">−1K</button>
+    </div>
+    <div style="font-size:9px;color:#1a3a2a;margin-top:8px;text-align:center">+500 steps/week to reach 12K goal in 8 weeks · currently avg ~8K</div>
+  `;
+  container.appendChild(stepsCard);
+  stepsCard.querySelectorAll('button[data-steps]').forEach(b=>{
+    b.onclick=()=>{state.dailySteps=Math.max(0,state.dailySteps+parseInt(b.dataset.steps));saveAll();renderHabits();};
+  });
+
+  // Day streak nudge
+  const dayNote=document.createElement('div');
+  dayNote.style.cssText='background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic';
+  dayNote.textContent='Daily habits build the compound interest of health';
+  container.appendChild(dayNote);
+
+  // ── Daily habits ──
+  const dailyItems=[
+    {key:'habitMeditation',emoji:'🧘',label:'Waking Up',sub:'Meditation · daily goal',color:'167,139,250',tip:'Even 5 min counts — consistency beats duration'},
+    {key:'habitPliability',emoji:'🤸',label:'Pliability',sub:'Mobility & stretching · daily goal',color:'52,211,153',tip:'Pliability app · minimum 15 min'},
+  ];
+  const dailySec=document.createElement('div');
+  dailySec.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  dailySec.innerHTML='<div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">Daily Habits</div>';
+  dailyItems.forEach(it=>{
+    const taken=state[it.key];
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);background:'+(taken?'rgba('+it.color+',.06)':'transparent');
+    row.innerHTML='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+it.emoji+'</span><div><div style="font-size:13px;font-weight:bold;color:rgba('+it.color+',1)">'+(taken?'✓ ':'')+it.label+'</div><div style="font-size:10px;color:#3a5a6a;margin-top:1px">'+it.sub+'</div></div></div><div style="font-size:9px;color:rgba('+it.color+',.35);margin-top:3px;padding-left:26px">'+it.tip+'</div></div><button data-hkey="'+it.key+'" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;border:1.5px solid rgba('+it.color+','+(taken?.6:.3)+');background:'+(taken?'rgba('+it.color+',.25)':'rgba('+it.color+',.07)')+';color:rgba('+it.color+',1);cursor:pointer">'+(taken?'✓':'○')+'</button>';
+    dailySec.appendChild(row);
+  });
+  container.appendChild(dailySec);
+
+  // ── Weekly training ──
+  const trainItems=[
+    {key:'strength',emoji:'🏋️',label:'Strength Training',sub:'Goal: 2h 30m / week',color:'251,146,60',
+     note:'40 min/session · key driver of lean mass & pace of aging',
+     warnAt:0.5,detail:'Strength Activity Time — your #1 longevity lever'},
+    {key:'zone13',emoji:'🚶',label:'Zone 1-3 Cardio',sub:'Goal: 2h 30m / week',color:'74,222,128',
+     note:'60 min/session · 6mo avg 1:42h — building back up',
+     warnAt:0.5,detail:'HR Zones 1-3 — aerobic base, fat burning, recovery'},
+    {key:'zone45',emoji:'🔥',label:'Zone 4-5 Cardio',sub:'Goal: 50 min / week',color:'239,83,80',
+     note:'10 min/session (Norwegian 4x4) · building from 0 — back cleared first',
+     warnAt:0.3,detail:'HR Zones 4-5 — VO₂max & pace of aging — biggest gap per Whoop'},
+  ];
+
+  const trainSec=document.createElement('div');
+  trainSec.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  trainSec.innerHTML='<div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:4px">Weekly Training</div><div style="font-size:9px;color:#1e3a4a;margin-bottom:12px">Resets Monday · targets from your Whoop Healthspan data</div>';
+
+  trainItems.forEach(it=>{
+    const mins=state['habit'+it.key.charAt(0).toUpperCase()+it.key.slice(1)+'Mins'];
+    const goal=WEEKLY_GOALS[it.key];
+    const sessionMins=SESSION_MINS[it.key];
+    const pct=Math.min((mins/goal)*100,100);
+    const done=mins>=goal;
+    const h=Math.floor(mins/60),m=mins%60;
+    const gh=Math.floor(goal/60),gm=goal%60;
+    const timeStr=h>0?(h+'h '+(m>0?m+'m':'')):(m+'m');
+    const goalStr=gh>0?(gh+'h '+(gm>0?gm+'m':'')):(gm+'m');
+    const barColor=done?'#00e5a0':pct>=50?('rgba('+it.color+',1)'):('rgba('+it.color+',.6)');
+
+    const block=document.createElement('div');
+    block.style.cssText='padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)';
+    block.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:16px">${it.emoji}</span>
+            <span style="font-size:13px;font-weight:bold;color:rgba(${it.color},1)">${it.label}</span>
+            ${done?'<span style="font-size:9px;color:#00e5a0;background:rgba(0,229,160,.1);border-radius:4px;padding:1px 5px">✓ Goal!</span>':''}
+          </div>
+          <div style="font-size:10px;color:#3a5a6a;margin-top:2px;padding-left:22px">${it.sub}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:8px">
+          <div style="font-size:14px;font-weight:bold;color:${done?'#00e5a0':('rgba('+it.color+',1)')}"><span>${timeStr}</span></div>
+          <div style="font-size:9px;color:#2a4a5a">of ${goalStr}</div>
+        </div>
+      </div>
+      <div style="height:7px;background:rgba(${it.color},.1);border-radius:4px;margin-bottom:8px">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div style="font-size:9px;color:rgba(${it.color},.4);margin-bottom:8px">${it.note}</div>
+      <div style="display:flex;gap:8px">
+        <button data-train="${it.key}" data-act="minus" style="padding:8px 12px;border-radius:10px;font-size:18px;border:1px solid rgba(${it.color},.28);background:rgba(${it.color},.07);color:rgba(${it.color},1);cursor:pointer">−</button>
+        <button data-train="${it.key}" data-act="plus" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(${it.color},.45);background:rgba(${it.color},.16);color:rgba(${it.color},1);cursor:pointer">+ Log ${sessionMins}min session</button>
+      </div>`;
+    trainSec.appendChild(block);
+  });
+  container.appendChild(trainSec);
+
+  // ── Water/electrolyte nudge ──
+  const totalTrainToday=SESSION_MINS.strength*(state.habitStrengthMins>0?1:0)+SESSION_MINS.zone13*(state.habitZone13Mins>0?1:0)+SESSION_MINS.zone45*(state.habitZone45Mins>0?1:0);
+  if(totalTrainToday>0){
+    const nudge=document.createElement('div');
+    nudge.style.cssText='background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:12px;padding:10px 14px;font-size:11px;color:#6ea8d0;text-align:center';
+    nudge.innerHTML='💧 Training logged — make sure your <strong>Day Type</strong> above matches today\'s activity so water & electrolyte targets update.';
+    container.appendChild(nudge);
+  }
+
+  // Wire up buttons
+  container.querySelectorAll('button[data-hkey]').forEach(b=>{
+    b.onclick=()=>{state[b.dataset.hkey]=!state[b.dataset.hkey];saveAll();renderHabits();};
+  });
+  container.querySelectorAll('button[data-train]').forEach(b=>{
+    b.onclick=()=>{
+      const k='habit'+b.dataset.train.charAt(0).toUpperCase()+b.dataset.train.slice(1)+'Mins';
+      const sm=SESSION_MINS[b.dataset.train];
+      if(b.dataset.act==='plus') state[k]=state[k]+sm;
+      else state[k]=Math.max(0,state[k]-sm);
+      saveAll();renderHabits();
+    };
+  });
 }
 
 // ─── Main Render ──────────────────────────────────────────────────────────────
@@ -790,6 +1217,9 @@ function render(){
   renderSmokes();
   renderCaff();
   renderSupps();
+  renderOral();
+  renderHabits();
+  renderScreenTime();
   renderHistory();
   saveSnapshot();
 }

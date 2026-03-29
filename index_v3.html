@@ -487,9 +487,10 @@ function saveAll(){
   sd('suppOmega',state.suppOmega);sd('suppTheanineAM',state.suppTheanineAM);
   sd('suppTheaninePM',state.suppTheaninePM);sd('suppVitB',state.suppVitB);
   sd('suppMag',state.suppMag);sd('suppFinasteride',state.suppFinasteride);sd('suppCreatine',state.suppCreatine);
-  sd('oralBrushAM',s.oralBrushAM);sd('oralMouthwashAM',s.oralMouthwashAM);
-  sd('oralBrushPM',s.oralBrushPM);sd('oralFlossPM',s.oralFlossPM);
-  sd('oralPickstersPM',s.oralPickstersPM);sd('oralMouthwashPM',s.oralMouthwashPM);
+  // FIX 1: was s.oral* — now state.oral*
+  sd('oralBrushAM',state.oralBrushAM);sd('oralMouthwashAM',state.oralMouthwashAM);
+  sd('oralBrushPM',state.oralBrushPM);sd('oralFlossPM',state.oralFlossPM);
+  sd('oralPickstersPM',state.oralPickstersPM);sd('oralMouthwashPM',state.oralMouthwashPM);
   sd('dailySteps',state.dailySteps);
   sd('screenTimeMins',state.screenTimeMins);
   sd('habitMeditation',state.habitMeditation);sd('habitPliability',state.habitPliability);
@@ -499,7 +500,7 @@ function saveAll(){
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const fml=ml=>ml>=1000?`${(ml/1000).toFixed(1)}L`:`${ml}ml`;
+const fml=ml=>ml>=1000?(ml/1000).toFixed(1)+'L':ml+'ml';
 const sc=pct=>{if(pct>=100)return'#00e5a0';if(pct>=60)return'#4fc3f7';if(pct>=30)return'#ffd54f';return'#ef5350';};
 const us=pct=>{if(pct>=100)return{l:'Well hydrated 💪',c:'#00e5a0'};if(pct>=60)return{l:'Getting there 👍',c:'#4fc3f7'};if(pct>=30)return{l:'Drink up 🚰',c:'#ffd54f'};return{l:'Dehydrated! 🚨',c:'#ef5350'};};
 const now=()=>new Date();
@@ -520,8 +521,8 @@ DAY_TYPES.forEach(d=>{
   dd.appendChild(b);
 });
 let ddOpen=false;
-function setShowDD(v){ddOpen=v;dd.classList.toggle('open',v);}
-document.getElementById('day-btn').onclick=()=>setShowDD(!ddOpen);
+function setShowDD(v){ddOpen=v;if(dd)dd.classList.toggle('open',v);}
+(document.getElementById('day-btn')||{}).onclick=()=>setShowDD(!ddOpen);
 document.addEventListener('click',e=>{if(!e.target.closest('.day-selector'))setShowDD(false);});
 }
 
@@ -546,11 +547,13 @@ TABS.forEach(t=>{
       const p=document.getElementById('panel-'+x.id);
       if(p){p.className='panel'+(x.id===t.id?' active':'');p.style.display=x.id===t.id?'block':'none';}
     });
-    if(t.id==='oral'){renderOral();}
-    if(t.id==='habits'){renderHabits();}
-    if(t.id==='screentime'){renderScreenTime();}
-    if(t.id==='whoop'){renderWhoop();}
-    if(t.id==='sex'){renderSex();}
+    try{
+      if(t.id==='oral'){renderOral();}
+      else if(t.id==='habits'){renderHabits();}
+      else if(t.id==='screentime'){renderScreenTime();}
+      else if(t.id==='whoop'){renderWhoop();}
+      else if(t.id==='sex'){renderSex();}
+    }catch(err){console.error('Tab render failed:',err.message);}
   };
   tabsEl.appendChild(b);
 });
@@ -566,7 +569,7 @@ TABS.forEach(t=>{
   if(!isOpen){
     panel.style.display='block';
     panel.className='panel active';
-    saveSnapshot();renderHistory();
+    saveSnapshot();try{renderHistory();}catch(err){console.error("History failed:",err.message);}
     btn.style.color='#4fc3f7';btn.style.background='rgba(79,195,247,.15)';
     btn.style.border='1px solid rgba(79,195,247,.4)';
   } else {
@@ -589,8 +592,9 @@ TABS.forEach(t=>{
   state.sessionDrinks=0;state.cigs=0;state.caffLog=[];
   state.suppOmega=false;state.suppTheanineAM=false;state.suppTheaninePM=false;
   state.suppVitB=false;state.suppMag=false;state.suppFinasteride=false;state.suppCreatine=false;
-  s.oralBrushAM=false;s.oralMouthwashAM=false;
-  s.oralBrushPM=false;s.oralFlossPM=false;s.oralPickstersPM=false;s.oralMouthwashPM=false;
+  // FIX 2: was s.oral* — now state.oral*
+  state.oralBrushAM=false;state.oralMouthwashAM=false;
+  state.oralBrushPM=false;state.oralFlossPM=false;state.oralPickstersPM=false;state.oralMouthwashPM=false;
   state.dailySteps=0;
   state.screenTimeMins=0;
   state.habitMeditation=false;state.habitPliability=false;
@@ -638,7 +642,7 @@ document.addEventListener('click',function(e){
     const v=parseInt(e.target.dataset.mje);
     state.mjEdible=Math.max(0,state.mjEdible+v);
     state.lastMJTime=new Date().toTimeString().slice(0,5);
-    saveAll();renderDrinks();
+    saveAll();try{renderDrinks();}catch(err){console.error("Drinks failed:",err.message);}
   }
 });
 (document.getElementById('mj-vape-1')||{}).onclick=()=>{state.mjVape++;state.lastMJTime=new Date().toTimeString().slice(0,5);saveAll();renderDrinks();};
@@ -667,12 +671,13 @@ function renderElec(){
   container.innerHTML='';
   ELEC_PRODUCTS.forEach(ep=>{
     const sv=scoops[ep.id],t=targets[ep.id],done=sv>=t,opt=optional[ep.id];
-    const mv=ep.mfn(s);
+    const mv=ep.mfn(sv);
     const div=document.createElement('div');
     div.className='card';
-    div.style.cssText=`background:${done?`rgba(${ep.rgb},.12)`:`rgba(${ep.rgb},.05)`};border:1.5px solid rgba(${ep.rgb},${done?.5:.22});margin-bottom:12px`;
-    let mHTML=mv.some(v=>v>0)?`<div class="minerals">${ep.minerals.map((m,i)=>`<div class="mineral"><div class="mineral-val" style="color:${ep.color}">${mv[i]}mg</div><div class="mineral-lbl">${m}</div></div>`).join('')}</div>`:'';
-    let segs=Array.from({length:t},(_,i)=>`<div class="progress-seg" style="background:${i<sv?ep.color:`rgba(${ep.rgb},.12)`}"></div>`).join('');
+    div.style.cssText='background:'+(done?'rgba('+ep.rgb+',.12)':'rgba('+ep.rgb+',.05)')+';border:1.5px solid rgba('+ep.rgb+','+(done?'0.5':'.22')+');margin-bottom:12px';
+    // FIX 3: was ${s>0?mHTML:''} — now ${sv>0?mHTML:''}
+    let mHTML=mv.some(v=>v>0)?('<div class="minerals">'+ep.minerals.map((m,i)=>'<div class="mineral"><div class="mineral-val" style="color:'+ep.color+'">'+mv[i]+'mg</div><div class="mineral-lbl">'+m+'</div></div>').join('')+'</div>'):'';
+    let segs=Array.from({length:t},(_,i)=>'<div class="progress-seg" style="background:'+(i<sv?ep.color:'rgba('+ep.rgb+',.12)')+'"></div>').join('');
     div.innerHTML=`
       <div style="display:flex;justify-content:space-between;margin-bottom:10px">
         <div>
@@ -687,7 +692,7 @@ function renderElec(){
         </div>
       </div>
       <div class="progress-row">${segs}</div>
-      ${s>0?mHTML:''}
+      ${sv>0?mHTML:''}
       <div class="add-row">
         <button class="add-minus" style="border:1px solid rgba(${ep.rgb},.28);background:rgba(${ep.rgb},.07);color:${ep.color}" data-ep="${ep.id}" data-act="minus">−</button>
         <button class="add-plus" style="border:1px solid rgba(${ep.rgb},.45);background:rgba(${ep.rgb},.16);color:${ep.color}" data-ep="${ep.id}" data-act="plus">+ Add Serve</button>
@@ -704,7 +709,7 @@ function renderElec(){
         state[id]++;
         if(id==='seeking'||id==='salts') state.water+=450;
       }
-      saveAll();renderElec();renderTotals();renderWater();
+      saveAll();try{renderElec();renderTotals();renderWater();}catch(err){console.error("Elec failed:",err.message);}
     };
   });
   renderTotals();
@@ -772,7 +777,7 @@ function renderCaff(){
     const b=document.createElement('button');
     b.className='caff-src';
     b.disabled=pastCut;
-    b.style.cssText=`border:1px solid rgba(74,222,128,${pastCut?.1:.35});background:rgba(74,222,128,${pastCut?.03:.1});color:${pastCut?'#2a4a3a':'#4ade80'};cursor:${pastCut?'not-allowed':'pointer'}`;
+    b.style.cssText=`border:1px solid rgba(74,222,128,${pastCut?0.1:.35});background:rgba(74,222,128,${pastCut?0.03:.1});color:${pastCut?'#2a4a3a':'#4ade80'};cursor:${pastCut?'not-allowed':'pointer'}`;
     b.innerHTML=`<span class="src-icon">${src.emoji}</span><span class="src-lbl">${src.label}</span><span class="src-mg" style="color:${pastCut?'#2a4a3a':'#3a8a5a'}">+${src.mg}mg${src.mag>0?' · +450ml 💧':''}</span>`;
     b.onclick=()=>{if(pastCut)return;state.caffLog.push({sourceId:src.id,mg:src.mg,time:new Date().toTimeString().slice(0,5)});if(src.id==='preworkout')state.water+=450;saveAll();renderCaff();renderTotals();renderWater();};
     grid.appendChild(b);
@@ -783,7 +788,7 @@ function renderCaff(){
     logCard.style.display='block';
     logEntries.innerHTML=[...state.caffLog].reverse().map(e=>{
       const src=CAFF_SOURCES.find(s=>s.id===e.sourceId);
-      return `<div class="log-entry"><span style="font-size:13px">${src?.emoji} <span style="font-size:12px;color:#b0d0e8">${src?.label}</span></span><div style="display:flex;gap:10px;align-items:center"><div style="text-align:right"><div style="font-size:12px;color:#4ade80;font-weight:bold">+${e.mg}mg</div>${src?.mag>0?`<div style="font-size:9px;color:#c084fc">+${src.mag}mg Mg · +${src.potassium}mg K</div>`:''}</div><span style="font-size:10px;color:#3a5a6a">${e.time}</span></div></div>`;
+      return `<div class="log-entry"><span style="font-size:13px">${src?src.emoji:""} <span style="font-size:12px;color:#b0d0e8">${src?src.label:""}</span></span><div style="display:flex;gap:10px;align-items:center"><div style="text-align:right"><div style="font-size:12px;color:#4ade80;font-weight:bold">+${e.mg}mg</div>${src&&src.mag>0?('<div style="font-size:9px;color:#c084fc">+'+src.mag+'mg Mg · +'+src.potassium+'mg K</div>'):''}</div><span style="font-size:10px;color:#3a5a6a">${e.time}</span></div></div>`;
     }).join('');
   } else {logCard.style.display='none';}
 }
@@ -798,7 +803,7 @@ function renderSupps(){
   document.getElementById('supp-count').innerHTML=`${done}<span style="font-size:13px;color:#4a4a8a">/7</span>`;
   document.getElementById('supp-count').style.color=all?'#00e5a0':'#818cf8';
   document.getElementById('supp-header').style.background=all?'rgba(129,140,248,.12)':'rgba(129,140,248,.06)';
-  document.getElementById('supp-header').style.borderColor=`rgba(129,140,248,${all?.45:.2})`;
+  document.getElementById('supp-header').style.borderColor=`rgba(129,140,248,${all?0.45:.2})`;
   const prog=document.getElementById('supp-prog');
   const keys=['omega','theanineAM','finasteride','vitb','creatine','mag','theaninePM'];
   prog.innerHTML=keys.map(k=>`<div class="prog-seg" style="background:${vals[k]?(all?'#00e5a0':'#818cf8'):'rgba(129,140,248,.12)'}"></div>`).join('');
@@ -810,7 +815,7 @@ function renderSupps(){
     const key2=s.id==='mag'?'suppMag':s.id==='finasteride'?'suppFinasteride':s.id==='vitb'?'suppVitB':`supp${s.id.charAt(0).toUpperCase()+s.id.slice(1)}`;const taken=!!state[key2];
     const div=document.createElement('div');
     div.className='supp-card';
-    div.style.cssText=`background:${taken?`rgba(${s.color},.12)`:`rgba(${s.color},.04)`};border:1.5px solid rgba(${s.color},${taken?.45:.18})`;
+    div.style.cssText='background:'+(taken?'rgba('+s.color+',.12)':'rgba('+s.color+',.04)')+';border:1.5px solid rgba('+s.color+','+(taken?'0.45':'.18')+')';
     const dose=s.dose;
     div.innerHTML=`
       <div class="supp-inner">
@@ -819,7 +824,7 @@ function renderSupps(){
           <div class="supp-dose">${dose}</div>
           <div class="supp-sub">${s.sub}</div>
         </div>
-        <button class="supp-toggle" data-sid="${s.id}" style="border:1.5px solid rgba(${s.color},${taken?.6:.3});background:${taken?`rgba(${s.color},.25)`:`rgba(${s.color},.07)`};color:rgba(${s.color},1)">${taken?'✓':'○'}</button>
+        <button class="supp-toggle" data-sid="${s.id}" style="border:1.5px solid rgba(${s.color},${taken?0.6:.3});background:${taken?'rgba('+s.color+',.25)':'rgba('+s.color+',.07)'};color:rgba(${s.color},1)">${taken?'✓':'○'}</button>
       </div>
       <div class="supp-tip" style="color:rgba(${s.color},.4)">💡 ${s.tip}</div>
     `;
@@ -955,20 +960,16 @@ function renderSex(){
     const done=state[key];
     const t=state[timeKey];
     const div=document.createElement('div');
-    div.style.cssText=`background:rgba(${color},.05);border:1.5px solid rgba(${color},${done?.4:.15});border-radius:16px;padding:16px;margin-bottom:12px`;
+    div.style.cssText=`background:rgba(${color},.05);border:1.5px solid rgba(${color},${done?0.4:.15});border-radius:16px;padding:16px;margin-bottom:12px`;
     div.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:15px;font-weight:bold;color:rgba(${color},1)">${emoji} ${label}</div>
           <div style="font-size:10px;color:rgba(${color},.6);margin-top:3px">${done?'Logged today'+(t?' · '+t:''):'Not logged today'}</div>
         </div>
-        <button data-sexkey="${key}" data-sextkey="${timeKey}" style="width:44px;height:44px;border-radius:12px;font-size:20px;border:1.5px solid rgba(${color},${done?.6:.3});background:${done?'rgba('+color+',.25)':'rgba('+color+',.07)'};color:rgba(${color},1);cursor:pointer">${done?'✓':'○'}</button>
+        <button data-sexkey="${key}" data-sextkey="${timeKey}" style="width:44px;height:44px;border-radius:12px;font-size:20px;border:1.5px solid rgba(${color},${done?0.6:.3});background:${done?'rgba('+color+',.25)':'rgba('+color+',.07)'};color:rgba(${color},1);cursor:pointer">${done?'✓':'○'}</button>
       </div>
-      ${done?`<div style="margin-top:12px">
-        <div style="font-size:10px;color:rgba(${color},.5);margin-bottom:6px">Time</div>
-        <input data-sextinput="${timeKey}" type="time" value="${t||''}"
-          style="background:rgba(${color},.08);border:1px solid rgba(${color},.25);border-radius:8px;padding:7px 10px;color:#e0f0ff;font-size:15px;width:100%;-webkit-appearance:none"/>
-      </div>`:''}`;
+      ${done?('<div style="margin-top:12px"><div style="font-size:10px;color:rgba('+color+',.5);margin-bottom:6px">Time</div><input data-sextinput="'+timeKey+'" type="time" value="'+(t||'')+'" style="background:rgba('+color+',.08);border:1px solid rgba('+color+',.25);border-radius:8px;padding:7px 10px;color:#e0f0ff;font-size:15px;width:100%;-webkit-appearance:none"/></div>'):''}`;
     container.appendChild(div);
   };
 
@@ -1011,13 +1012,13 @@ function renderDrinks(){
   else banner.innerHTML='';
   const sc2=document.getElementById('session-card');
   sc2.style.background=state.sessionDrinks>=4?'rgba(239,83,80,.1)':'rgba(244,114,182,.07)';
-  sc2.style.border=`1.5px solid rgba(244,114,182,${state.sessionDrinks>=4?.5:.25})`;
+  sc2.style.border=`1.5px solid rgba(244,114,182,${state.sessionDrinks>=4?0.5:.25})`;
   document.getElementById('session-count').textContent=fmt05(s.sessionDrinks||s.drinks||0);
   document.getElementById('session-count').style.color=state.sessionDrinks>=4?'#ef5350':'#f472b6';
   const dots=document.getElementById('drink-dots');
   dots.innerHTML=Array.from({length:4},(_,i)=>`<div class="drink-dot" style="background:${i<state.sessionDrinks?(state.sessionDrinks>=4?'#ef5350':'#f472b6'):'rgba(244,114,182,.12)'}"></div>`).join('');
   const d1=document.getElementById('drink-1'),d15=document.getElementById('drink-15');
-  [d1,d15].forEach(b=>{b.style.border=`1px solid rgba(244,114,182,${blocked?.15:.5})`;b.style.background=`rgba(244,114,182,${blocked?.04:.18})`;b.style.color=blocked?'#5a3a4a':'#f472b6';b.style.cursor=blocked?'not-allowed':'pointer';});
+  [d1,d15].forEach(b=>{b.style.border='1px solid rgba(244,114,182,'+(blocked?0.15:.5)+')';b.style.background='rgba(244,114,182,'+(blocked?0.04:.18)+')';b.style.color=blocked?'#5a3a4a':'#f472b6';b.style.cursor=blocked?'not-allowed':'pointer';});
   if(blocked){d1.innerHTML=pastCut?'Cutoff':'Limit';d15.innerHTML=pastCut?'':'-';}
   else{d1.innerHTML='+ 1 std<br><span style="font-size:10px;font-weight:normal">+250ml 💧</span>';d15.innerHTML='+ 1.5 std<br><span style="font-size:10px;font-weight:normal">+375ml 💧</span>';}
   const wkLeft=Math.max(10-state.weekDrinks,0);
@@ -1120,8 +1121,8 @@ function renderHistory(){
         caffMg:state.caffLog.reduce((a,e)=>a+e.mg,0),
         supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag,state.suppFinasteride].filter(Boolean).length,
         dailySteps:state.dailySteps,
-    screenTimeMins:state.screenTimeMins,
-    suppK:(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200),
+        screenTimeMins:state.screenTimeMins,
+        suppK:(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200),
         suppNa:(state.seeking*150)+(state.bulk*113)+(state.salts*1014),
         suppMg:(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(state.suppMag?150:0),
         isToday:true,
@@ -1164,8 +1165,6 @@ function renderHistory(){
   }).join('');
 }
 
-// ─── Share Summary ───────────────────────────────────────────────────────────
-
 // ─── Render Screen Time ───────────────────────────────────────────────────────
 function renderScreenTime(){
   const s=getS();
@@ -1197,7 +1196,7 @@ function renderScreenTime(){
     +'</div>';
   container.appendChild(card);
   card.querySelectorAll('button[data-sm]').forEach(b=>{
-    b.onclick=()=>{state.screenTimeMins=Math.max(0,state.screenTimeMins+parseInt(b.dataset.sm));saveAll();renderScreenTime();};
+    b.onclick=()=>{state.screenTimeMins=Math.max(0,state.screenTimeMins+parseInt(b.dataset.sm));saveAll();try{renderScreenTime();}catch(err){console.error("ScreenTime failed:",err.message);}};
   });
 
   const sci=document.createElement('div');
@@ -1274,7 +1273,7 @@ function buildShareText(){
     `  Cannabis edible: ${src.mjEdible} instances · vape: ${src.mjVape} puffs${src.lastMJTime?' · last '+src.lastMJTime:''}`,
     ``,
     `━━━ 🏃 EXERCISE & STEPS ━━━`,
-    `  🚶 Steps: ${src.dailySteps.toLocaleString()} / 12,000 goal`,
+    `  🚶 Steps: ${(src.dailySteps||0).toLocaleString()} / 12,000 goal`,
     `  🧘 Meditation: ${src.habitMeditation?'✓ done':'✗ not done'}`,
     `  🤸 Pliability: ${src.habitPliability?'✓ done':'✗ not done'}`,
     `  🏋️ Strength: ${src.habitStrengthMins}min this week / 150min goal`,
@@ -1327,7 +1326,7 @@ document.addEventListener('click',e=>{
     const days=isApril?35:7;
     for(let i=days-1;i>=0;i--){
       const d=new Date();d.setDate(d.getDate()-i);
-      if(isApril&&(d.getMonth()!==2&&d.getMonth()!==3))continue; // March+April only
+      if(isApril&&(d.getMonth()!==2&&d.getMonth()!==3))continue;
       const key=d.toDateString();
       let entry=null;
       if(key===new Date().toDateString()){
@@ -1387,13 +1386,11 @@ function renderOral(){
   const container=document.getElementById('oral-cards');
   container.innerHTML='';
 
-  // Header
   const hdr=document.createElement('div');
-  hdr.style.cssText='border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:'+(allDone?'rgba(56,189,248,.12)':'rgba(56,189,248,.06)')+';border:1.5px solid rgba(56,189,248,'+(allDone?.45:.2)+')';
+  hdr.style.cssText='border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:'+(allDone?'rgba(56,189,248,.12)':'rgba(56,189,248,.06)')+';border:1.5px solid rgba(56,189,248,'+(allDone?0.45:.2)+')';
   hdr.innerHTML='<div><div style="font-size:14px;font-weight:bold;color:#38bdf8">'+(allDone?'Mouth done! 🦷':'Oral Hygiene')+'</div><div style="font-size:10px;color:#2a5a6a;margin-top:2px">Tap each when done</div></div><div style="font-size:26px;font-weight:bold;color:'+(allDone?'#00e5a0':'#38bdf8')+'">'+totalDone+'<span style="font-size:13px;color:#2a5a6a">/'+totalItems+'</span></div>';
   container.appendChild(hdr);
 
-  // Progress bar
   const pb=document.createElement('div');
   pb.style.cssText='display:flex;gap:6px;margin-bottom:18px';
   pb.innerHTML=Array.from({length:totalItems},(_,i)=>'<div style="flex:1;height:6px;border-radius:3px;background:'+(i<totalDone?(allDone?'#00e5a0':'#38bdf8'):'rgba(56,189,248,.12)')+'"></div>').join('');
@@ -1407,7 +1404,7 @@ function renderOral(){
       const taken=state[it.key];
       const row=document.createElement('div');
       row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)';
-      row.innerHTML='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">'+it.emoji+'</span><div><div style="font-size:13px;font-weight:bold;color:rgba(56,189,248,'+(taken?1:.7)+')">'+(taken?'✓ ':'')+it.label+'</div><div style="font-size:10px;color:#2a5a6a;margin-top:1px">'+it.dose+'</div></div></div><div style="font-size:9px;color:#1a4a5a;margin-top:3px;padding-left:24px">'+it.tip+'</div></div><button data-okey="'+it.key+'" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;border:1.5px solid rgba(56,189,248,'+(taken?.6:.3)+');background:'+(taken?'rgba(56,189,248,.25)':'rgba(56,189,248,.07)')+';color:#38bdf8;cursor:pointer">'+(taken?'✓':'○')+'</button>';
+      row.innerHTML='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">'+it.emoji+'</span><div><div style="font-size:13px;font-weight:bold;color:rgba(56,189,248,'+(taken?1:.7)+')">'+(taken?'✓ ':'')+it.label+'</div><div style="font-size:10px;color:#2a5a6a;margin-top:1px">'+it.dose+'</div></div></div><div style="font-size:9px;color:#1a4a5a;margin-top:3px;padding-left:24px">'+it.tip+'</div></div><button data-okey="'+it.key+'" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;border:1.5px solid rgba(56,189,248,'+(taken?0.6:.3)+');background:'+(taken?'rgba(56,189,248,.25)':'rgba(56,189,248,.07)')+';color:#38bdf8;cursor:pointer">'+(taken?'✓':'○')+'</button>';
       sec.appendChild(row);
     });
     return sec;
@@ -1430,12 +1427,11 @@ function renderHabits(){
   if(!container)return;
   container.innerHTML='';
 
-  // ── Steps card ──
   const stepsGoal=12000;
   const stepsPct=Math.min(((s.dailySteps||0)/stepsGoal)*100,100);
   const stepsColor=state.dailySteps>=stepsGoal?'#00e5a0':state.dailySteps>=7500?'#4ade80':state.dailySteps>=5000?'#fbbf24':'#fb923c';
   const stepsCard=document.createElement('div');
-  stepsCard.style.cssText='background:rgba(74,222,128,.05);border:1.5px solid rgba(74,222,128,'+((s.dailySteps||0)>=stepsGoal?.45:.2)+');border-radius:16px;padding:16px;margin-bottom:12px';
+  stepsCard.style.cssText='background:rgba(74,222,128,.05);border:1.5px solid rgba(74,222,128,'+((s.dailySteps||0)>=stepsGoal?0.45:.2)+');border-radius:16px;padding:16px;margin-bottom:12px';
   stepsCard.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div>
@@ -1463,13 +1459,11 @@ function renderHabits(){
     b.onclick=()=>{if(viewState)return;state.dailySteps=Math.max(0,state.dailySteps+parseInt(b.dataset.steps));saveAll();renderHabits();};
   });
 
-  // Day streak nudge
   const dayNote=document.createElement('div');
   dayNote.style.cssText='background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic';
   dayNote.textContent='Daily habits build the compound interest of health';
   container.appendChild(dayNote);
 
-  // ── Daily habits ──
   const dailyItems=[
     {key:'habitMeditation',emoji:'🧘',label:'Waking Up',sub:'Meditation · daily goal',color:'167,139,250',tip:'Even 5 min counts — consistency beats duration'},
     {key:'habitPliability',emoji:'🤸',label:'Pliability',sub:'Mobility & stretching · daily goal',color:'52,211,153',tip:'Pliability app · minimum 15 min'},
@@ -1481,12 +1475,11 @@ function renderHabits(){
     const taken=state[it.key];
     const row=document.createElement('div');
     row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);background:'+(taken?'rgba('+it.color+',.06)':'transparent');
-    row.innerHTML='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+it.emoji+'</span><div><div style="font-size:13px;font-weight:bold;color:rgba('+it.color+',1)">'+(taken?'✓ ':'')+it.label+'</div><div style="font-size:10px;color:#3a5a6a;margin-top:1px">'+it.sub+'</div></div></div><div style="font-size:9px;color:rgba('+it.color+',.35);margin-top:3px;padding-left:26px">'+it.tip+'</div></div><button data-hkey="'+it.key+'" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;border:1.5px solid rgba('+it.color+','+(taken?.6:.3)+');background:'+(taken?'rgba('+it.color+',.25)':'rgba('+it.color+',.07)')+';color:rgba('+it.color+',1);cursor:pointer">'+(taken?'✓':'○')+'</button>';
+    row.innerHTML='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+it.emoji+'</span><div><div style="font-size:13px;font-weight:bold;color:rgba('+it.color+',1)">'+(taken?'✓ ':'')+it.label+'</div><div style="font-size:10px;color:#3a5a6a;margin-top:1px">'+it.sub+'</div></div></div><div style="font-size:9px;color:rgba('+it.color+',.35);margin-top:3px;padding-left:26px">'+it.tip+'</div></div><button data-hkey="'+it.key+'" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;border:1.5px solid rgba('+it.color+','+(taken?0.6:.3)+');background:'+(taken?'rgba('+it.color+',.25)':'rgba('+it.color+',.07)')+';color:rgba('+it.color+',1);cursor:pointer">'+(taken?'✓':'○')+'</button>';
     dailySec.appendChild(row);
   });
   container.appendChild(dailySec);
 
-  // ── Weekly training ──
   const trainItems=[
     {key:'strength',emoji:'🏋️',label:'Strength Training',sub:'Goal: 2h 30m / week',color:'251,146,60',
      note:'40 min/session · key driver of lean mass & pace of aging',
@@ -1544,7 +1537,6 @@ function renderHabits(){
   });
   container.appendChild(trainSec);
 
-  // ── Water/electrolyte nudge ──
   const totalTrainToday=SESSION_MINS.strength*(state.habitStrengthMins>0?1:0)+SESSION_MINS.zone13*(state.habitZone13Mins>0?1:0)+SESSION_MINS.zone45*(state.habitZone45Mins>0?1:0);
   if(totalTrainToday>0){
     const nudge=document.createElement('div');
@@ -1553,7 +1545,6 @@ function renderHabits(){
     container.appendChild(nudge);
   }
 
-  // Wire up buttons
   container.querySelectorAll('button[data-hkey]').forEach(b=>{
     b.onclick=()=>{
       const k=b.dataset.hkey;state[k]=!state[k];
@@ -1568,26 +1559,20 @@ function renderHabits(){
       const sm=SESSION_MINS[b.dataset.train];
       if(b.dataset.act==='plus') state[k]=state[k]+sm;
       else state[k]=Math.max(0,state[k]-sm);
-      saveAll();renderHabits();
+      saveAll();try{renderHabits();}catch(err){console.error("Habits failed:",err.message);}
     };
   });
 }
 
 
 // ─── Render Body Recomp ───────────────────────────────────────────────────────
-// DEXA reference: Apr 2025 — 107.6kg, 21% BF, 81.5kg lean
 const DEXA_REF={weight:107.6,bf:21,lean:81.5,date:'Apr 2025'};
 const DEXA_TARGET_BF=15;
 const DEXA_TARGET_DATE=new Date('2026-05-01');
 
-// Calibration from 17 Nov 2025 same-day DEXA vs Hume:
-// Hume weight reads +1.6kg HIGH  -> subtract 1.6kg
-// Hume BF% reads -2.2% LOW       -> add 2.2%
-// Hume LBM reads +3.7kg HIGH     -> subtract 3.7kg
-// Hume targets for 15% actual BF: ~102.5-103kg, ~12.5-13% BF on Hume
-const HUME_WEIGHT_OFFSET=-1.6;  // subtract from Hume weight
-const HUME_BF_OFFSET=2.2;       // add to Hume BF%
-const HUME_LBM_OFFSET=-3.7;     // subtract from Hume LBM
+const HUME_WEIGHT_OFFSET=-1.6;
+const HUME_BF_OFFSET=2.2;
+const HUME_LBM_OFFSET=-3.7;
 
 function calcDexaAdjusted(humeWeight,humeBf){
   if(!humeWeight||!humeBf)return null;
@@ -1609,14 +1594,12 @@ function renderBody(){
   const bf=s.bodyFatPct;
   const adj=w&&bf?calcDexaAdjusted(w,bf):null;
   const lbs=w?(w*2.2046).toFixed(1):0;
-  const proteinGoal=w?Math.round(w*2.2046):0; // 1g per lb (Huberman/Layne Norton standard)
+  const proteinGoal=w?Math.round(w*2.2046):0;
   const fibreGoal=45;
 
-  // Days to DEXA
   const today=new Date();
   const daysLeft=Math.max(0,Math.ceil((DEXA_TARGET_DATE-today)/(1000*60*60*24)));
 
-  // Progress to 15% BF
   let progressHTML='';
   if(adj){
     const currentDexaBf=adj.bf;
@@ -1646,8 +1629,17 @@ function renderBody(){
     </div>`;
   }
 
+  const adjHTML=adj?('<div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:13px 16px;margin-bottom:12px">'+
+      '<div style="font-size:10px;color:#7a5a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">DEXA-Calibrated Estimate</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center">'+
+        '<div><div style="font-size:15px;font-weight:bold;color:#4fc3f7">'+adj.weight+'kg</div><div style="font-size:9px;color:#2a4a6a;margin-top:2px">DEXA Wt</div></div>'+
+        '<div><div style="font-size:15px;font-weight:bold;color:#a78bfa">'+adj.bf+'%</div><div style="font-size:9px;color:#4a3a7a;margin-top:2px">Body Fat</div></div>'+
+        '<div><div style="font-size:15px;font-weight:bold;color:#34d399">'+adj.lean+'kg</div><div style="font-size:9px;color:#1a4a3a;margin-top:2px">Lean Mass</div></div>'+
+        '<div><div style="font-size:15px;font-weight:bold;color:#fb923c">'+adj.fat+'kg</div><div style="font-size:9px;color:#5a3a1a;margin-top:2px">Fat Mass</div></div>'+
+      '</div>'+
+      '<div style="font-size:9px;color:#3a2a5a;margin-top:8px;text-align:center">Calibrated from 17 Nov 2025 same-day DEXA · wt -1.6kg · BF +2.2% · LBM -3.7kg</div>'+
+    '</div>'):'';
   container.innerHTML=`
-    <!-- AM Weigh-in -->
     <div style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:16px;padding:16px;margin-bottom:12px">
       <div style="font-size:14px;font-weight:bold;color:#4fc3f7;margin-bottom:12px">⚖️ Morning Weigh-in</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1667,19 +1659,8 @@ function renderBody(){
       <button id="body-save-btn" style="width:100%;margin-top:12px;padding:11px;border-radius:11px;font-size:13px;font-weight:bold;border:1.5px solid rgba(79,195,247,.45);background:rgba(79,195,247,.18);color:#4fc3f7;cursor:pointer">Save</button>
     </div>
 
-    <!-- DEXA Adjusted -->
-    ${adj?`<div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:13px 16px;margin-bottom:12px">
-      <div style="font-size:10px;color:#7a5a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">DEXA-Calibrated Estimate</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center">
-        <div><div style="font-size:15px;font-weight:bold;color:#4fc3f7">${adj.weight}kg</div><div style="font-size:9px;color:#2a4a6a;margin-top:2px">DEXA Wt</div></div>
-        <div><div style="font-size:15px;font-weight:bold;color:#a78bfa">${adj.bf}%</div><div style="font-size:9px;color:#4a3a7a;margin-top:2px">Body Fat</div></div>
-        <div><div style="font-size:15px;font-weight:bold;color:#34d399">${adj.lean}kg</div><div style="font-size:9px;color:#1a4a3a;margin-top:2px">Lean Mass</div></div>
-        <div><div style="font-size:15px;font-weight:bold;color:#fb923c">${adj.fat}kg</div><div style="font-size:9px;color:#5a3a1a;margin-top:2px">Fat Mass</div></div>
-      </div>
-      <div style="font-size:9px;color:#3a2a5a;margin-top:8px;text-align:center">Calibrated from 17 Nov 2025 same-day DEXA · wt -1.6kg · BF +2.2% · LBM -3.7kg</div>
-    </div>`:''}
+    ${adjHTML}
 
-    <!-- Hume Targets -->
     <div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:14px;padding:12px 16px;margin-bottom:12px">
       <div style="font-size:10px;color:#7a6a30;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">Hume Targets to Hit 15% Actual BF</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
@@ -1688,10 +1669,8 @@ function renderBody(){
       </div>
     </div>
 
-    <!-- Progress to goal -->
     ${progressHTML}
 
-    <!-- Daily nutrition accountability -->
     <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">Daily Nutrition Goals</div>
 
@@ -1700,7 +1679,7 @@ function renderBody(){
           <div style="font-size:13px;font-weight:bold;color:#4ade80">🔥 Calorie Deficit</div>
           <div style="font-size:10px;color:#3a5a4a;margin-top:1px">Stayed in deficit today · tracked in MFP</div>
         </div>
-        <button data-bkey="bodyCalDeficit" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(74,222,128,${s.bodyCalDeficit?.6:.3});background:${s.bodyCalDeficit?'rgba(74,222,128,.25)':'rgba(74,222,128,.07)'};color:#4ade80;cursor:pointer">${state.bodyCalDeficit?'✓':'○'}</button>
+        <button data-bkey="bodyCalDeficit" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(74,222,128,${s.bodyCalDeficit?0.6:0.3});background:${s.bodyCalDeficit?'rgba(74,222,128,.25)':'rgba(74,222,128,.07)'};color:#4ade80;cursor:pointer">${state.bodyCalDeficit?'✓':'○'}</button>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">
@@ -1708,7 +1687,7 @@ function renderBody(){
           <div style="font-size:13px;font-weight:bold;color:#fb923c">💪 Protein Goal</div>
           <div id="protein-goal-label" style="font-size:10px;color:#5a3a1a;margin-top:1px">${proteinGoal?proteinGoal+'g target (1g/lb · '+lbs+'lbs)':'Enter weight above to calculate'} · tracked in MFP</div>
         </div>
-        <button data-bkey="bodyProtein" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(251,146,60,${s.bodyProtein?.6:.3});background:${s.bodyProtein?'rgba(251,146,60,.25)':'rgba(251,146,60,.07)'};color:#fb923c;cursor:pointer">${state.bodyProtein?'✓':'○'}</button>
+        <button data-bkey="bodyProtein" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(251,146,60,${s.bodyProtein?0.6:0.3});background:${s.bodyProtein?'rgba(251,146,60,.25)':'rgba(251,146,60,.07)'};color:#fb923c;cursor:pointer">${state.bodyProtein?'✓':'○'}</button>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
@@ -1716,11 +1695,10 @@ function renderBody(){
           <div style="font-size:13px;font-weight:bold;color:#34d399">🌿 Fibre Goal</div>
           <div style="font-size:10px;color:#1a4a3a;margin-top:1px">${fibreGoal}g target · tracked in MFP</div>
         </div>
-        <button data-bkey="bodyFibre" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(52,211,153,${s.bodyFibre?.6:.3});background:${s.bodyFibre?'rgba(52,211,153,.25)':'rgba(52,211,153,.07)'};color:#34d399;cursor:pointer">${state.bodyFibre?'✓':'○'}</button>
+        <button data-bkey="bodyFibre" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(52,211,153,${s.bodyFibre?0.6:0.3});background:${s.bodyFibre?'rgba(52,211,153,.25)':'rgba(52,211,153,.07)'};color:#34d399;cursor:pointer">${state.bodyFibre?'✓':'○'}</button>
       </div>
     </div>
 
-    <!-- DEXA history context -->
     <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:11px 14px">
       <div style="font-size:10px;color:#4a7a9b;font-weight:bold;margin-bottom:6px">DEXA History</div>
       <div style="font-size:10px;color:#2a4a5a;line-height:1.8">
@@ -1734,16 +1712,14 @@ function renderBody(){
     </div>
   `;
 
-  // Wire nutrition ticks (re-wired each render since innerHTML recreates them)
   container.querySelectorAll('button[data-bkey]').forEach(b=>{
-    b.onclick=()=>{state[b.dataset.bkey]=!state[b.dataset.bkey];saveAll();renderBody();};
+    b.onclick=()=>{if(viewState)return;state[b.dataset.bkey]=!state[b.dataset.bkey];saveAll();try{renderBody();}catch(err){console.error(err);}};
   });
 }
 
-// Body tab event delegation — survives re-renders
 document.addEventListener('click',function(e){
   if(e.target.id==='whoop-save-btn'){
-    const fields=['whoopRecovery','whoopSleep','whoopHRV','whoopRHR','whoopStrain','whoopSleepHrs','whoopVO2'];
+    const fields=['whoopRecovery','whoopSleep','whoopHRV','whoopRHR','whoopStrain','whoopSleepHrs','whoopRestorativeSleep','whoopVO2'];
     fields.forEach(k=>{
       const el=document.querySelector('[data-wkey="'+k+'"]');
       if(el){const v=parseFloat(el.value);if(!isNaN(v)&&v>0)state[k]=v;}
@@ -1759,7 +1735,8 @@ document.addEventListener('click',function(e){
     const bv=parseFloat(bi.value)||0;
     if(wv>0)state.bodyWeight=wv;
     if(bv>0)state.bodyFatPct=bv;
-    saveAll();renderBody();
+    saveAll();
+    try{renderBody();}catch(err){console.error('renderBody failed:',err);}
   }
 });
 document.addEventListener('input',function(e){
@@ -1772,9 +1749,6 @@ document.addEventListener('input',function(e){
   }
 });
 
-
-
-// Whoop Journal Export
 function buildWhoopText(){
   const lastCaff=state.caffLog.length?state.caffLog[state.caffLog.length-1].time:'--';
   const glasses=Math.round(state.water/240);
@@ -1833,6 +1807,7 @@ function buildWhoopText(){
     `  Restorative sleep: ${state.whoopRestorativeSleep||'--'}${state.whoopRestorativeSleep?'%':''}`,
   ].join('\n');
 }
+
 // ─── Main Render ──────────────────────────────────────────────────────────────
 function render(){
   const fns=[renderBody,renderWhoop,renderSex,renderWater,renderElec,renderDrinks,
@@ -1842,7 +1817,6 @@ function render(){
     try{fn();}catch(err){console.error(fn.name+' FAILED:',err.message||err);}
   });
 }
-
 
 // ─── View Mode ────────────────────────────────────────────────────────────────
 function enterViewMode(snap){

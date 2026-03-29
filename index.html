@@ -28,7 +28,7 @@ button:active{transform:scale(0.93)}
 .day-option{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.04);padding:10px 14px;color:#b0d0e8;font-size:13px;display:flex;justify-content:space-between;text-align:left}
 .day-option.active{background:rgba(79,195,247,.13);color:#4fc3f7}
 .day-option span.ml{color:#4a7a9b;font-size:11px}
-.tabs{display:flex;background:rgba(255,255,255,.04);border-radius:14px;padding:3px;margin-bottom:18px;width:100%;max-width:340px;gap:2px}
+.tabs{display:flex;background:rgba(255,255,255,.04);border-radius:14px;padding:3px;margin-bottom:18px;width:100%;overflow-x:auto;gap:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tab{flex:1;padding:7px 0;border-radius:11px;color:#3a6a8a;font-size:9px;display:flex;flex-direction:column;align-items:center;gap:1px;transition:all .2s}
 .tab.active{background:rgba(79,195,247,.18);color:#4fc3f7;font-weight:bold}
 .tab-icon{font-size:14px}
@@ -361,7 +361,7 @@ const SUPPS=[
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const today=new Date().toDateString();
-const getWeekKey=()=>{const d=new Date(),j=new Date(d.getFullYear(),0,1),w=Math.ceil(((d-j)/86400000+j.getDay()+1)/7);return `${d.getFullYear()}-W${w}`;};
+const getWeekKey=()=>{const d=new Date(),day=(d.getDay()+6)%7,mon=new Date(d);mon.setDate(d.getDate()-day);return `${mon.getFullYear()}-${mon.getMonth()}-${mon.getDate()}`;}; // Mon-Sun weeks
 const weekKey=getWeekKey();
 const ld=(k,def)=>{try{const v=localStorage.getItem(k+'_'+today);return v!==null?JSON.parse(v):def;}catch{return def;}};
 const sd=(k,v)=>{try{localStorage.setItem(k+'_'+today,JSON.stringify(v));}catch{}};
@@ -680,7 +680,7 @@ function renderSupps(){
   let lastGroup='';
   SUPPS.forEach(s=>{
     if(s.group&&s.group!==lastGroup){lastGroup=s.group;const gh=document.createElement('div');gh.style.cssText='font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin:14px 0 6px;padding-left:2px';gh.textContent=s.group;cards.appendChild(gh);}
-    const key2=s.id==='mag'?'suppMag':s.id==='finasteride'?'suppFinasteride':`supp${s.id.charAt(0).toUpperCase()+s.id.slice(1)}`;const taken=!!state[key2];
+    const key2=s.id==='mag'?'suppMag':s.id==='finasteride'?'suppFinasteride':s.id==='vitb'?'suppVitB':`supp${s.id.charAt(0).toUpperCase()+s.id.slice(1)}`;const taken=!!state[key2];
     const div=document.createElement('div');
     div.className='supp-card';
     div.style.cssText=`background:${taken?`rgba(${s.color},.12)`:`rgba(${s.color},.04)`};border:1.5px solid rgba(${s.color},${taken?.45:.18})`;
@@ -701,7 +701,7 @@ function renderSupps(){
   cards.querySelectorAll('.supp-toggle').forEach(b=>{
     b.onclick=()=>{
       const sid=b.dataset.sid;
-      const key=sid==='mag'?'suppMag':sid==='finasteride'?'suppFinasteride':`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
+      const key=sid==='mag'?'suppMag':sid==='finasteride'?'suppFinasteride':sid==='vitb'?'suppVitB':`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
       state[key]=!state[key];saveAll();renderSupps();renderTotals();
     };
   });
@@ -1429,27 +1429,29 @@ function renderBody(){
     </div>
   `;
 
-  // Wire save button
-  document.getElementById('body-save-btn').onclick=()=>{
-    const wv=parseFloat(document.getElementById('body-weight-input').value)||0;
-    const bv=parseFloat(document.getElementById('body-bf-input').value)||0;
-    state.bodyWeight=wv;state.bodyFatPct=bv;saveAll();renderBody();
-  };
-
-  // Live protein preview on weight input
-  document.getElementById('body-weight-input').addEventListener('input',function(){
-    const wv=parseFloat(this.value)||0;
-    const liveProtein=wv?Math.round(wv*2.2046):0;
-    const liveLbs=wv?(wv*2.2046).toFixed(1):0;
-    const el=document.getElementById('protein-goal-label');
-    if(el) el.textContent=liveProtein?liveProtein+'g target (1g/lb · '+liveLbs+'lbs) · tracked in MFP':'Enter weight above to calculate · tracked in MFP';
-  });
-
-  // Wire nutrition ticks
+  // Wire nutrition ticks (re-wired each render since innerHTML recreates them)
   container.querySelectorAll('button[data-bkey]').forEach(b=>{
     b.onclick=()=>{state[b.dataset.bkey]=!state[b.dataset.bkey];saveAll();renderBody();};
   });
 }
+
+// Body tab event delegation — survives re-renders
+document.addEventListener('click',function(e){
+  if(e.target.id==='body-save-btn'){
+    const wv=parseFloat(document.getElementById('body-weight-input').value)||0;
+    const bv=parseFloat(document.getElementById('body-bf-input').value)||0;
+    state.bodyWeight=wv;state.bodyFatPct=bv;saveAll();renderBody();
+  }
+});
+document.addEventListener('input',function(e){
+  if(e.target.id==='body-weight-input'){
+    const wv=parseFloat(e.target.value)||0;
+    const liveProtein=wv?Math.round(wv*2.2046):0;
+    const liveLbs=wv?(wv*2.2046).toFixed(1):0;
+    const el=document.getElementById('protein-goal-label');
+    if(el) el.textContent=liveProtein?liveProtein+'g target (1g/lb · '+liveLbs+'lbs) · tracked in MFP':'Enter weight above to calculate · tracked in MFP';
+  }
+});
 
 // ─── Main Render ──────────────────────────────────────────────────────────────
 function render(){

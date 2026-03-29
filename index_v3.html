@@ -430,6 +430,7 @@ let state={
   whoopRHR:ld('whoopRHR',0),
   whoopStrain:ld('whoopStrain',0),
   whoopSleepHrs:ld('whoopSleepHrs',0),
+  whoopRestorativeSleep:ld('whoopRestorativeSleep',0),
   whoopVO2:ld('whoopVO2',0),
   bodyCalDeficit:ld('bodyCalDeficit',false),
   bodyProtein:ld('bodyProtein',false),
@@ -471,7 +472,7 @@ let state={
 
 function saveAll(){
   sd('bodyWeight',state.bodyWeight);sd('bodyFatPct',state.bodyFatPct);
-  sd('whoopRecovery',state.whoopRecovery);sd('whoopSleep',state.whoopSleep);sd('whoopHRV',state.whoopHRV);sd('whoopRHR',state.whoopRHR);sd('whoopStrain',state.whoopStrain);sd('whoopSleepHrs',state.whoopSleepHrs);sd('whoopVO2',state.whoopVO2);
+  sd('whoopRecovery',state.whoopRecovery);sd('whoopSleep',state.whoopSleep);sd('whoopHRV',state.whoopHRV);sd('whoopRHR',state.whoopRHR);sd('whoopStrain',state.whoopStrain);sd('whoopSleepHrs',state.whoopSleepHrs);sd('whoopRestorativeSleep',state.whoopRestorativeSleep);sd('whoopVO2',state.whoopVO2);
   sd('bodyCalDeficit',state.bodyCalDeficit);sd('bodyProtein',state.bodyProtein);sd('bodyFibre',state.bodyFibre);
   sd('water',state.water);sd('daytype',state.dayTypeId);
   sd('seeking',state.seeking);sd('bulk',state.bulk);sd('salts',state.salts);
@@ -671,7 +672,7 @@ function renderElec(){
     div.className='card';
     div.style.cssText=`background:${done?`rgba(${ep.rgb},.12)`:`rgba(${ep.rgb},.05)`};border:1.5px solid rgba(${ep.rgb},${done?.5:.22});margin-bottom:12px`;
     let mHTML=mv.some(v=>v>0)?`<div class="minerals">${ep.minerals.map((m,i)=>`<div class="mineral"><div class="mineral-val" style="color:${ep.color}">${mv[i]}mg</div><div class="mineral-lbl">${m}</div></div>`).join('')}</div>`:'';
-    let segs=Array.from({length:t},(_,i)=>`<div class="progress-seg" style="background:${i<s?ep.color:`rgba(${ep.rgb},.12)`}"></div>`).join('');
+    let segs=Array.from({length:t},(_,i)=>`<div class="progress-seg" style="background:${i<sv?ep.color:`rgba(${ep.rgb},.12)`}"></div>`).join('');
     div.innerHTML=`
       <div style="display:flex;justify-content:space-between;margin-bottom:10px">
         <div>
@@ -680,7 +681,7 @@ function renderElec(){
           ${ep.outOfStock?'<div style="font-size:9px;color:#ef9090;margin-top:3px;background:rgba(239,83,80,.12);border:1px solid rgba(239,83,80,.25);border-radius:5px;padding:2px 6px;display:inline-block">⚠️ Out of stock — restock ordered</div>':''}
         </div>
         <div style="text-align:right">
-          <div style="font-size:12px;color:${ep.color}">${s}/${t} serve${t!==1?'s':''}</div>
+          <div style="font-size:12px;color:${ep.color}">${sv}/${t} serve${t!==1?'s':''}</div>
           ${opt&&!done?'<div style="font-size:9px;color:#7a5a3a;margin-top:2px">optional today</div>':''}
           ${done?'<div style="font-size:10px;color:#00e5a0;margin-top:1px">✓ Done!</div>':''}
         </div>
@@ -884,6 +885,7 @@ function renderWhoop(){
     {key:'whoopRHR',label:'Resting HR',emoji:'🫀',unit:'bpm',color:'#fb923c',tip:'Resting heart rate — lower is better',max:80},
     {key:'whoopStrain',label:'Strain',emoji:'🔥',unit:'',color:'#fbbf24',tip:'Daily strain score (0-21)',max:21},
     {key:'whoopSleepHrs',label:'Sleep Hours',emoji:'🌙',unit:'h',color:'#818cf8',tip:'Total sleep duration',max:10},
+    {key:'whoopRestorativeSleep',label:'Restorative Sleep',emoji:'💫',unit:'%',color:'#c084fc',tip:'Deep + REM sleep as % of total — aim for 40%+',max:100},
     {key:'whoopVO2',label:'VO₂ Max',emoji:'🫁',unit:'',color:'#34d399',tip:'Aerobic fitness — maintained at 42 last check',max:60},
   ];
 
@@ -908,8 +910,9 @@ function renderWhoop(){
         <div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#fb923c">${state.whoopRHR||'—'}${state.whoopRHR?'bpm':''}</div><div style="font-size:9px;color:#5a2a1a;margin-top:2px">RHR</div></div>
         <div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#fbbf24">${state.whoopStrain||'—'}</div><div style="font-size:9px;color:#5a4a10;margin-top:2px">Strain</div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
         <div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#818cf8">${state.whoopSleepHrs||'—'}${state.whoopSleepHrs?'h':''}</div><div style="font-size:9px;color:#3a2a5a;margin-top:2px">Sleep Hours</div></div>
+        <div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#c084fc">${state.whoopRestorativeSleep||'—'}${state.whoopRestorativeSleep?'%':''}</div><div style="font-size:9px;color:#4a2a6a;margin-top:2px">Restorative</div></div>
         <div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#34d399">${state.whoopVO2||'—'}</div><div style="font-size:9px;color:#1a4a3a;margin-top:2px">VO₂ Max</div></div>
       </div>
     </div>`;
@@ -1142,7 +1145,7 @@ function renderHistory(){
         <div style="font-size:11px;font-weight:bold;color:${wcolor}">${wpct}% hydrated</div>
       </div>
       <div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;margin-bottom:10px"><div style="height:100%;width:${wpct}%;background:${wcolor};border-radius:3px"></div></div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px"><div style="display:contents">
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px">
         <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4fc3f7">${fml(e.water)}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Water</div><div style="font-size:8px;color:#3a5a6a">${Math.round((e.water||0)/240)}gl</div></div>
         <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#f472b6">${fmt05(e.drinks)}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Drinks</div></div>
         <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4ade80">${e.caffMg}mg</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Caffeine</div></div>
@@ -1223,7 +1226,7 @@ function buildShareText(){
   const src=viewState||state;
   const dt=DAY_TYPES.find(d=>d.id===(src.dayTypeId||state.dayTypeId))||DAY_TYPES[0];
   const target=dt.target+(src.sessionDrinks*250);
-  const pct=Math.round(((s.water||0)/target)*100);
+  const pct=Math.round(((src.water||0)/target)*100);
   const pw=(src.caffLog||state.caffLog).filter(e=>e.sourceId==='preworkout').length;
   const suppK=(src.seeking*500)+Math.round(src.bulk*139.5)+(src.salts*200)+(pw*100);
   const suppNa=(src.seeking*150)+(src.bulk*113)+(src.salts*1014)+(pw*50);
@@ -1261,9 +1264,9 @@ function buildShareText(){
     `    Nov 2025: 106.4kg · 18.6% ← last DEXA`,
     ``,
     `  Daily nutrition:`,
-    `    Calorie deficit: ${s.bodyCalDeficit?'✓ hit':'✗ missed'}`,
-    `    Protein: ${s.bodyProtein?'✓ hit':'✗ missed'}${proteinGoal?' ('+proteinGoal+'g target · 1g/lb)':''}`,
-    `    Fibre 45g: ${s.bodyFibre?'✓ hit':'✗ missed'}`,
+    `    Calorie deficit: ${src.bodyCalDeficit?'✓ hit':'✗ missed'}`,
+    `    Protein: ${src.bodyProtein?'✓ hit':'✗ missed'}${proteinGoal?' ('+proteinGoal+'g target · 1g/lb)':''}`,
+    `    Fibre 45g: ${src.bodyFibre?'✓ hit':'✗ missed'}`,
     ``,
     `━━━ 🍻 DRINKS & CANNABIS ━━━`,
     `  Alcohol: ${fmt05(src.sessionDrinks)} std drinks today / ${fmt05(src.weekDrinks)} this week`,
@@ -1295,6 +1298,16 @@ function buildShareText(){
     ``,
     `━━━ 📱 SCREEN TIME ━━━`,
     `  ${src.screenTimeMins}min / 30min goal`,
+    ``,
+    `━━━ 🫀 WHOOP ━━━`,
+    `  Recovery: ${src.whoopRecovery||'not logged'}${src.whoopRecovery?'%':''}`,
+    `  Sleep score: ${src.whoopSleep||'not logged'}${src.whoopSleep?'%':''}`,
+    `  HRV: ${src.whoopHRV||'not logged'}${src.whoopHRV?'ms':''}`,
+    `  RHR: ${src.whoopRHR||'not logged'}${src.whoopRHR?'bpm':''}`,
+    `  Strain: ${src.whoopStrain||'not logged'}`,
+    `  Sleep: ${src.whoopSleepHrs||'not logged'}${src.whoopSleepHrs?'h':''}`,
+    `  Restorative sleep: ${src.whoopRestorativeSleep||'not logged'}${src.whoopRestorativeSleep?'%':''}`,
+    `  VO₂ Max: ${src.whoopVO2||'not logged'}`,
   ].join('\n');
 }
 
@@ -1817,6 +1830,7 @@ function buildWhoopText(){
     ``,
     `NIGHTTIME`,
     `  Screen in bed: ${state.screenTimeMins>0?'Yes — '+state.screenTimeMins+'min':'No'}`,
+    `  Restorative sleep: ${state.whoopRestorativeSleep||'--'}${state.whoopRestorativeSleep?'%':''}`,
   ].join('\n');
 }
 // ─── Main Render ──────────────────────────────────────────────────────────────

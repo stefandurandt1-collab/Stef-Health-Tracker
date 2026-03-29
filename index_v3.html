@@ -122,6 +122,9 @@ button:active{transform:scale(0.93)}
     <div class="header-title">Health Tracker v3</div>
     <div class="header-date" id="hdr-date"></div>
   </div>
+  <div style="text-align:center;margin-bottom:8px">
+    <button id="history-toggle-btn" style="font-size:11px;font-weight:bold;color:#4a7a9b;background:rgba(74,122,155,.1);border:1px solid rgba(74,122,155,.25);border-radius:8px;padding:5px 16px;cursor:pointer">📅 History</button>
+  </div>
 
   <div id="view-banner" style="display:none;background:rgba(251,191,36,.12);border:1.5px solid rgba(251,191,36,.45);border-radius:12px;padding:9px 14px;margin-bottom:10px;justify-content:space-between;align-items:center">
     <div style="font-size:12px;color:#fbbf24;font-weight:bold" id="view-label">📅 Viewing past day</div>
@@ -322,7 +325,7 @@ button:active{transform:scale(0.93)}
 
   <!-- HISTORY -->
 
-  <div class="panel" id="panel-history">
+  <div class="panel" id="panel-history" style="overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em">Past 30 Days</div>
       <button id="share-btn" style="font-size:11px;font-weight:bold;color:#4fc3f7;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:5px 11px;cursor:pointer">📋 Share Today</button>
@@ -335,6 +338,12 @@ button:active{transform:scale(0.93)}
     </div>
     <div id="history-list"></div>
     <div style="font-size:9px;color:#1e3a4a;text-align:center;margin-top:8px">Data saves automatically at midnight each day</div>
+  </div>
+
+  <!-- SEX -->
+
+  <div class="panel" id="panel-sex">
+    <div id="sex-cards"></div>
   </div>
 
   <!-- ORAL -->
@@ -467,7 +476,9 @@ function saveAll(){
   sd('water',state.water);sd('daytype',state.dayTypeId);
   sd('seeking',state.seeking);sd('bulk',state.bulk);sd('salts',state.salts);
   sd('sessionDrinks',state.sessionDrinks);sdw('weekDrinks',state.weekDrinks);
-  sd('lastDrinkTime',state.lastDrinkTime);sd('mjEdible',state.mjEdible);sd('mjVape',state.mjVape);
+  sd('lastDrinkTime',state.lastDrinkTime);
+  sd('sexActivity',state.sexActivity);sd('sexActivityTime',state.sexActivityTime);
+  sd('sexMasturbation',state.sexMasturbation);sd('sexMasturbationTime',state.sexMasturbationTime);sd('mjEdible',state.mjEdible);sd('mjVape',state.mjVape);
   sd('lastMJTime',state.lastMJTime);sd('lastSmokeTime',state.lastSmokeTime);
   sd('lastMedTime',state.lastMedTime);sd('lastStretchTime',state.lastStretchTime);
   sd('cigs',state.cigs);sdg('cigStartDate',state.cigStartDate);
@@ -498,7 +509,7 @@ const fmt05=v=>v%1===0?String(v):v.toFixed(1);
 (document.getElementById('hdr-date')||{}).textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
 
 // Day dropdown
-const dd=document.getElementById('day-dropdown');if(!dd)return;
+const dd=document.getElementById('day-dropdown');if(dd){
 DAY_TYPES.forEach(d=>{
   const b=document.createElement('button');
   b.className='day-option'+(d.id===state.dayTypeId?' active':'');
@@ -511,18 +522,61 @@ let ddOpen=false;
 function setShowDD(v){ddOpen=v;dd.classList.toggle('open',v);}
 document.getElementById('day-btn').onclick=()=>setShowDD(!ddOpen);
 document.addEventListener('click',e=>{if(!e.target.closest('.day-selector'))setShowDD(false);});
+}
 
 // Tabs
-const TABS=[{id:'body',emoji:'⚖️',title:'Body'},{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'supps',emoji:'💊',title:'Supps'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'oral',emoji:'🦷',title:'Oral'},{id:'habits',emoji:'🏃',title:'Habits'},{id:'screentime',emoji:'📱',title:'Screen'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'whoop',emoji:'📳',title:'Whoop'},{id:'history',emoji:'📅',title:'History'}];
+const TABS=[{id:'body',emoji:'⚖️',title:'Body'},{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'supps',emoji:'💊',title:'Supps'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'oral',emoji:'🦷',title:'Oral'},{id:'habits',emoji:'🏃',title:'Habits'},{id:'screentime',emoji:'📱',title:'Screen'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'sex',emoji:'💋',title:'Sex'},{id:'whoop',emoji:'🫀',title:'Whoop'}];
 const tabsEl=document.getElementById('tabs');
 TABS.forEach(t=>{
   const b=document.createElement('button');
   b.className='tab'+(t.id===state.activeTab?' active':'');
   b.id='tab-'+t.id;
   b.innerHTML=`<span class="tab-icon">${t.emoji}</span><span>${t.title}</span>`;
-  b.onclick=()=>{state.activeTab=t.id;TABS.forEach(x=>{document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');document.getElementById('panel-'+x.id).className='panel'+(x.id===t.id?' active':'');});if(t.id==='history'){saveSnapshot();renderHistory();}if(t.id==='oral'){renderOral();}if(t.id==='habits'){renderHabits();}if(t.id==='screentime'){renderScreenTime();}if(t.id==='whoop'){renderWhoop();}if(t.id==='history'){saveSnapshot();renderHistory();}};
+  b.onclick=()=>{
+    state.activeTab=t.id;
+    // Hide history panel and reset its button
+    const hp=document.getElementById('panel-history');
+    if(hp){hp.style.display='none';hp.className='panel';}
+    const hb=document.getElementById('history-toggle-btn');
+    if(hb){hb.style.color='#4a7a9b';hb.style.background='rgba(74,122,155,.1)';hb.style.border='1px solid rgba(74,122,155,.25)';}
+    // Show correct panel
+    TABS.forEach(x=>{
+      document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');
+      const p=document.getElementById('panel-'+x.id);
+      if(p){p.className='panel'+(x.id===t.id?' active':'');p.style.display=x.id===t.id?'block':'none';}
+    });
+    if(t.id==='oral'){renderOral();}
+    if(t.id==='habits'){renderHabits();}
+    if(t.id==='screentime'){renderScreenTime();}
+    if(t.id==='whoop'){renderWhoop();}
+    if(t.id==='sex'){renderSex();}
+  };
   tabsEl.appendChild(b);
 });
+
+// History toggle
+(document.getElementById('history-toggle-btn')||{}).onclick=()=>{
+  const panel=document.getElementById('panel-history');
+  const btn=document.getElementById('history-toggle-btn');
+  if(!panel)return;
+  const isOpen=panel.style.display==='block';
+  // Hide all panels first
+  document.querySelectorAll('.panel').forEach(p=>{p.style.display='none';p.className='panel';});
+  if(!isOpen){
+    panel.style.display='block';
+    panel.className='panel active';
+    saveSnapshot();renderHistory();
+    btn.style.color='#4fc3f7';btn.style.background='rgba(79,195,247,.15)';
+    btn.style.border='1px solid rgba(79,195,247,.4)';
+  } else {
+    // Return to active tab
+    const activeId=state.activeTab||'body';
+    const activePanel=document.getElementById('panel-'+activeId);
+    if(activePanel){activePanel.style.display='block';activePanel.className='panel active';}
+    btn.style.color='#4a7a9b';btn.style.background='rgba(74,122,155,.1)';
+    btn.style.border='1px solid rgba(74,122,155,.25)';
+  }
+};
 
 // Water buttons
 (document.getElementById('tap-water')||{}).onclick=()=>{state.water+=450;saveAll();render();};
@@ -887,6 +941,59 @@ function renderWhoop(){
   container.appendChild(note);
 }
 
+
+// ─── Render Sex ───────────────────────────────────────────────────────────────
+function renderSex(){
+  const container=document.getElementById('sex-cards');
+  if(!container)return;
+  container.innerHTML='';
+
+  const makeCard=(key,timeKey,label,emoji,color)=>{
+    const done=state[key];
+    const t=state[timeKey];
+    const div=document.createElement('div');
+    div.style.cssText=`background:rgba(${color},.05);border:1.5px solid rgba(${color},${done?.4:.15});border-radius:16px;padding:16px;margin-bottom:12px`;
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:15px;font-weight:bold;color:rgba(${color},1)">${emoji} ${label}</div>
+          <div style="font-size:10px;color:rgba(${color},.6);margin-top:3px">${done?'Logged today'+(t?' · '+t:''):'Not logged today'}</div>
+        </div>
+        <button data-sexkey="${key}" data-sextkey="${timeKey}" style="width:44px;height:44px;border-radius:12px;font-size:20px;border:1.5px solid rgba(${color},${done?.6:.3});background:${done?'rgba('+color+',.25)':'rgba('+color+',.07)'};color:rgba(${color},1);cursor:pointer">${done?'✓':'○'}</button>
+      </div>
+      ${done?`<div style="margin-top:12px">
+        <div style="font-size:10px;color:rgba(${color},.5);margin-bottom:6px">Time</div>
+        <input data-sextinput="${timeKey}" type="time" value="${t||''}"
+          style="background:rgba(${color},.08);border:1px solid rgba(${color},.25);border-radius:8px;padding:7px 10px;color:#e0f0ff;font-size:15px;width:100%;-webkit-appearance:none"/>
+      </div>`:''}`;
+    container.appendChild(div);
+  };
+
+  makeCard('sexActivity','sexActivityTime','Sexual Activity','❤️‍🔥','239,68,68');
+  makeCard('sexMasturbation','sexMasturbationTime','Masturbation','💆','167,139,250');
+
+  const note=document.createElement('div');
+  note.style.cssText='font-size:10px;color:#2a4a5a;text-align:center;padding:12px;line-height:1.5';
+  note.textContent='Tracked for Whoop journal · resets daily at midnight';
+  container.appendChild(note);
+
+  // Wire ticks
+  container.querySelectorAll('button[data-sexkey]').forEach(b=>{
+    b.onclick=()=>{
+      const k=b.dataset.sexkey;const tk=b.dataset.sextkey;
+      state[k]=!state[k];
+      if(state[k])state[tk]=new Date().toTimeString().slice(0,5);
+      else state[tk]='';
+      saveAll();renderSex();
+    };
+  });
+
+  // Wire time inputs
+  container.querySelectorAll('input[data-sextinput]').forEach(inp=>{
+    inp.onchange=()=>{state[inp.dataset.sextinput]=inp.value;saveAll();};
+  });
+}
+
 // ─── Render Drinks ────────────────────────────────────────────────────────────
 function renderDrinks(){
   const s=getS();
@@ -1035,7 +1142,7 @@ function renderHistory(){
         <div style="font-size:11px;font-weight:bold;color:${wcolor}">${wpct}% hydrated</div>
       </div>
       <div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;margin-bottom:10px"><div style="height:100%;width:${wpct}%;background:${wcolor};border-radius:3px"></div></div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px"><div style="display:contents">
         <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4fc3f7">${fml(e.water)}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Water</div><div style="font-size:8px;color:#3a5a6a">${Math.round((e.water||0)/240)}gl</div></div>
         <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#f472b6">${fmt05(e.drinks)}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Drinks</div></div>
         <div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4ade80">${e.caffMg}mg</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Caffeine</div></div>
@@ -1664,6 +1771,10 @@ function buildWhoopText(){
   return [
     `🔄 Whoop Journal — ${dateStr}`,
     ``,
+    `SEXUAL ACTIVITY`,
+    `  Sexual activity: ${state.sexActivity?'Yes':'No'}${state.sexActivityTime?' · '+state.sexActivityTime:''}`,
+    `  Masturbation: ${state.sexMasturbation?'Yes':'No'}${state.sexMasturbationTime?' · '+state.sexMasturbationTime:''}`,
+    ``,
     `ALCOHOL`,
     `  Avoided: ${state.sessionDrinks===0?'Yes':'No'}`,
     `  Drinks: ${fmt05(state.sessionDrinks)} std`,
@@ -1710,9 +1821,9 @@ function buildWhoopText(){
 }
 // ─── Main Render ──────────────────────────────────────────────────────────────
 function render(){
-  const fns=[renderBody,renderWhoop,renderWater,renderElec,renderDrinks,
+  const fns=[renderBody,renderWhoop,renderSex,renderWater,renderElec,renderDrinks,
     renderSmokes,renderCaff,renderSupps,renderOral,renderHabits,
-    renderScreenTime,renderHistory,saveSnapshot];
+    renderScreenTime,saveSnapshot];
   fns.forEach(function(fn){
     try{fn();}catch(err){console.error(fn.name+' FAILED:',err.message||err);}
   });

@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Health Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Health Tracker"/>
+<meta name="theme-color" content="#100a18"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#100a18;font-family:Georgia,'Times New Roman',serif;color:#f0e8f4;min-height:100vh;overscroll-behavior:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+button:active{transform:scale(0.93)}
+#app{display:flex;flex-direction:column;align-items:center;padding:20px 14px 60px;min-height:100dvh;background:linear-gradient(160deg,#100a18 0%,#1a0e24 55%,#0e0810 100%)}
+.header{text-align:center;margin-bottom:14px}
+.header-sub{font-size:9px;letter-spacing:.35em;color:#d946ef;text-transform:uppercase;margin-bottom:2px}
+.header-title{font-size:24px;font-weight:bold;letter-spacing:-.5px;color:#fce7f3}
+.header-date{font-size:11px;color:#9a6090;margin-top:2px}
+.day-selector{margin-bottom:14px;width:100%;max-width:340px;position:relative}
+.day-btn{width:100%;background:rgba(217,70,239,.08);border:1.5px solid rgba(217,70,239,.28);border-radius:12px;padding:10px 14px;color:#f0e8f4;font-size:13px;display:flex;align-items:center;justify-content:space-between}
+.day-btn span.chg{color:#d946ef;font-size:11px}
+.day-dropdown{display:none;position:absolute;top:calc(100% + 5px);left:0;right:0;background:rgba(16,10,24,.98);border:1.5px solid rgba(217,70,239,.22);border-radius:12px;overflow:hidden;z-index:20}
+.day-dropdown.open{display:block}
+.day-option{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.04);padding:10px 14px;color:#c0a0d0;font-size:13px;display:flex;justify-content:space-between;text-align:left}
+.day-option.active{background:rgba(217,70,239,.13);color:#d946ef}
+.day-option span.ml{color:#6a4a8a;font-size:11px}
+.tabs{display:flex;background:rgba(255,255,255,.04);border-radius:14px;padding:3px;margin-bottom:18px;width:100%;overflow-x:auto;gap:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tab{flex:1;padding:7px 0;border-radius:11px;color:#5a3a6a;font-size:9px;display:flex;flex-direction:column;align-items:center;gap:1px;transition:all .2s;min-width:52px}
+.tab.active{background:rgba(217,70,239,.18);color:#d946ef;font-weight:bold}
+.tab-icon{font-size:14px}
+.panel{width:100%;max-width:340px;display:none}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.panel.active{animation:fadeIn .2s ease}
+.card{border-radius:16px;padding:16px;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:bold}
+.card-sub{font-size:10px;color:#6a4a6a;margin-top:1px}
+.status-pill{border-radius:10px;padding:6px 18px;margin-bottom:16px;font-size:13px;text-align:center}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px;text-align:center}
+.stat-val{font-size:16px;font-weight:bold}
+.stat-lbl{font-size:10px;color:#5a3a6a;margin-top:2px;text-transform:uppercase;letter-spacing:.1em}
+.row{display:flex;gap:10px;width:100%}
+.undo-btn{flex:1;background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.28);border-radius:12px;padding:11px;color:#ef9090;font-size:13px}
+.undo-btn:disabled{color:#3a2a3a;cursor:not-allowed}
+.reset-btn{background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px;color:#5a3a6a;font-size:12px}
+.progress-row{display:flex;gap:6px;margin:10px 0}
+.progress-seg{flex:1;height:7px;border-radius:4px;transition:background .3s}
+.minerals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.mineral{background:rgba(0,0,0,.2);border-radius:8px;padding:7px 4px;text-align:center}
+.mineral-val{font-size:12px;font-weight:bold}
+.mineral-lbl{font-size:9px;color:#7a4a9a;margin-top:1px;text-transform:uppercase;letter-spacing:.04em}
+.add-row{display:flex;gap:8px}
+.add-minus{flex:1;padding:9px;border-radius:10px;font-size:20px}
+.add-plus{flex:2;padding:9px;border-radius:10px;font-size:13px;font-weight:bold}
+.card-hint{font-size:9px;margin-top:7px;text-align:center}
+.totals-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px}
+.totals-title{font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.15em;margin-bottom:9px}
+.totals-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.total-item{text-align:center}
+.total-lbl{font-size:9px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.total-val{font-size:13px;font-weight:bold}
+.mini-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:4px}
+.mini-fill{height:100%;border-radius:2px;transition:width .4s}
+.warning-banner{border-radius:12px;padding:10px 14px;margin-bottom:14px;text-align:center}
+.drink-dots{display:flex;gap:8px;margin-bottom:14px}
+.drink-dot{flex:1;height:10px;border-radius:5px;transition:background .3s}
+.warn-msg{border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#ef9090;text-align:center;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4)}
+.cig-roadmap{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.cig-cell{text-align:center}
+.cig-box{width:100%;aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.cig-wlbl{font-size:7px;margin-top:2px}
+.supp-card{border-radius:14px;padding:14px;margin-bottom:10px}
+.supp-inner{display:flex;justify-content:space-between;align-items:flex-start}
+.supp-info{flex:1}
+.supp-name-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.supp-dose{font-size:11px;color:#c0a0d0;margin-bottom:2px}
+.supp-sub{font-size:10px;color:#5a4a6a}
+.supp-tip{font-size:9px;margin-top:8px}
+.prog-bar-wrap{display:flex;gap:6px;margin-bottom:18px}
+.prog-seg{flex:1;height:6px;border-radius:3px;transition:background .3s}
+.info-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 14px;font-size:10px;color:#4a3a5a;line-height:1.6}
+.log-entry{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(255,255,255,.03);border-radius:9px}
+.caff-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.caff-src{padding:11px 8px;border-radius:11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.caff-src .src-icon{font-size:20px}
+.caff-src .src-lbl{font-size:11px;font-weight:bold}
+.caff-src .src-mg{font-size:10px}
+.footer{margin-top:22px;font-size:9px;color:#2a1a2a;text-align:center;max-width:300px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="header">
+    <div class="header-sub">Daily Protocol</div>
+    <div class="header-title">Health Tracker</div>
+    <div class="header-date" id="hdr-date"></div>
+  </div>
+
+  <div style="text-align:center;margin-bottom:8px">
+    <button id="history-toggle-btn" style="font-size:11px;font-weight:bold;color:#6a4a8a;background:rgba(106,74,138,.1);border:1px solid rgba(106,74,138,.25);border-radius:8px;padding:5px 16px;cursor:pointer">📅 History</button>
+  </div>
+
+  <div id="view-banner" style="display:none;background:rgba(251,191,36,.12);border:1.5px solid rgba(251,191,36,.45);border-radius:12px;padding:9px 14px;margin-bottom:10px;justify-content:space-between;align-items:center">
+    <div style="font-size:12px;color:#fbbf24;font-weight:bold" id="view-label">📅 Viewing past day</div>
+    <button id="view-exit" style="font-size:11px;font-weight:bold;color:#fbbf24;background:rgba(251,191,36,.2);border:1px solid rgba(251,191,36,.4);border-radius:7px;padding:5px 10px;cursor:pointer">← Today</button>
+  </div>
+
+  <div class="day-selector">
+    <button class="day-btn" id="day-btn">
+      <span id="day-label">😴 Rest Day</span>
+      <span class="chg">▼ change</span>
+    </button>
+    <div class="day-dropdown" id="day-dropdown"></div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <!-- SMOKES -->
+
+  <div class="panel active" id="panel-smokes">
+    <div id="smokes-cards"></div>
+  </div>
+
+  <!-- DRINKS -->
+
+  <div class="panel" id="panel-drinks">
+    <div id="drink-cutoff-banner"></div>
+    <div class="card" id="session-card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div class="card-title" style="color:#f472b6">Tonight's Session</div><div class="card-sub">Max 4 std drinks · stops at 8pm</div></div>
+        <div style="text-align:right"><div style="font-size:22px;font-weight:bold;color:#f472b6" id="session-count">0</div><div style="font-size:10px;color:#7a4a6a">/ 4</div></div>
+      </div>
+      <div class="drink-dots" id="drink-dots"></div>
+      <div id="drink-warning" style="display:none" class="warn-msg"></div>
+      <div style="display:flex;gap:8px">
+        <button id="drink-minus" style="padding:11px 13px;border-radius:11px;border:1px solid rgba(244,114,182,.28);background:rgba(244,114,182,.07);color:#f472b6;font-size:22px">−</button>
+        <button id="drink-1" style="flex:1;padding:11px 6px;border-radius:11px;font-size:12px;font-weight:bold">+ 1 std<br/><span style="font-size:10px;font-weight:normal">+250ml 💧</span></button>
+        <button id="drink-15" style="flex:1;padding:11px 6px;border-radius:11px;font-size:12px;font-weight:bold">+ 1.5 std<br/><span style="font-size:10px;font-weight:normal">+375ml 💧</span></button>
+      </div>
+      <div style="font-size:9px;color:#6a3a58;margin-top:7px;text-align:center">Water auto-logs with each drink</div>
+    </div>
+    <div class="card" id="week-drink-card" style="padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><div style="font-size:13px;font-weight:bold;color:#f472b6">This Week</div><div style="font-size:10px;color:#7a4a6a;margin-top:1px">Weekly limit: 10 std drinks</div></div>
+        <div style="font-size:20px;font-weight:bold;color:#f472b6" id="week-count">0 <span style="font-size:12px;color:#7a4a6a">/ 10</span></div>
+      </div>
+      <div style="height:8px;background:rgba(244,114,182,.1);border-radius:4px"><div id="week-bar" style="height:100%;border-radius:4px;transition:width .4s;background:#f472b6;width:0%"></div></div>
+      <div style="font-size:10px;color:#5a3a5a;margin-top:8px;text-align:center" id="week-remaining">10 drinks remaining this week</div>
+    </div>
+    <div class="info-card"><div style="color:#f472b6;font-weight:bold;margin-bottom:4px">Recovery rules 🧠</div>Alcohol disrupts sleep, dehydrates, and impacts cycle hormones. Front-load water before and during — not just after.</div>
+  </div>
+
+  <!-- WEIGHT -->
+
+  <div class="panel" id="panel-weight">
+    <div id="weight-cards"></div>
+  </div>
+
+  <!-- WATER -->
+
+  <div class="panel" id="panel-water">
+    <div class="water-circle" style="position:relative;margin-bottom:16px;display:flex;justify-content:center">
+      <svg id="water-svg" width="185" height="185" viewBox="0 0 200 200">
+        <defs>
+          <clipPath id="cc"><circle cx="100" cy="100" r="88"/></clipPath>
+          <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+            <stop id="wg-stop1" offset="0%" stop-opacity="0.9"/>
+            <stop id="wg-stop2" offset="100%" stop-opacity="0.5"/>
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="100" r="94" fill="none" stroke="rgba(217,70,239,0.12)" stroke-width="2"/>
+        <circle cx="100" cy="100" r="88" fill="rgba(16,8,24,0.65)"/>
+        <g clip-path="url(#cc)">
+          <rect id="wave-rect" x="0" width="200" height="200"/>
+          <path id="wave-path" opacity="0.25"/>
+        </g>
+        <circle id="arc" cx="100" cy="100" r="88" fill="none" stroke-width="3" stroke-dasharray="0 553" stroke-linecap="round" transform="rotate(-90 100 100)" style="transition:stroke-dasharray .5s ease,stroke .5s ease"/>
+        <text id="svg-intake" x="100" y="87" text-anchor="middle" fill="#f0e8f4" font-size="29" font-weight="bold" font-family="Georgia,serif"></text>
+        <text id="svg-target" x="100" y="106" text-anchor="middle" fill="#9a6090" font-size="11" font-family="Georgia,serif"></text>
+        <text id="svg-pct" x="100" y="128" text-anchor="middle" font-size="16" font-weight="bold" font-family="Georgia,serif"></text>
+      </svg>
+    </div>
+    <div class="status-pill" id="status-pill"></div>
+    <button id="tap-water" style="width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(217,70,239,.32),rgba(100,0,180,.18));border:2.5px solid rgba(217,70,239,.48);color:#f0e8f4;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 36px rgba(217,70,239,.18);margin:0 auto 18px">
+      <span style="font-size:38px">💧</span>
+      <span style="font-size:19px;font-weight:bold;margin-top:3px">+450ml</span>
+      <span style="font-size:10px;color:#9a6090;margin-top:1px">tap to log</span>
+    </button>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-remaining"></div><div class="stat-lbl">Remaining</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-cups"></div><div class="stat-lbl">Cups left</div></div>
+    </div>
+    <div class="row">
+      <button class="undo-btn" id="undo-water">← Undo 450ml</button>
+      <button class="reset-btn" id="reset-btn">Reset day</button>
+    </div>
+    <div class="footer" style="margin-top:14px">Pale yellow = hydrated · Dark yellow = drink now · Clear = over-hydrated</div>
+  </div>
+
+  <!-- EXERCISE -->
+
+  <div class="panel" id="panel-exercise">
+    <div id="exercise-cards"></div>
+  </div>
+
+  <!-- CAFFEINE -->
+
+  <div class="panel" id="panel-caffeine">
+    <div id="caff-banner" style="margin-bottom:14px"></div>
+    <div class="card" style="margin-bottom:12px;padding:18px 16px;background:rgba(74,222,128,.05);border:1.5px solid rgba(74,222,128,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div style="font-size:15px;font-weight:bold;color:#4ade80">Today's Caffeine</div><div style="font-size:10px;color:#2a5a3a;margin-top:1px">Soft limit 400mg · cutoff 1pm</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:bold;color:#4ade80" id="caff-total">0<span style="font-size:12px;color:#2a5a3a">mg</span></div><div style="font-size:10px;color:#2a5a3a" id="caff-servings">0 servings</div></div>
+      </div>
+      <div style="height:8px;background:rgba(74,222,128,.1);border-radius:4px;margin-bottom:14px"><div id="caff-bar" style="height:100%;border-radius:4px;background:#4ade80;width:0%;transition:width .4s"></div></div>
+      <div class="caff-grid" id="caff-grid"></div>
+    </div>
+    <div id="caff-log-card" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.15em">Today's Log</div>
+        <button id="caff-clear" style="font-size:10px;color:#5a3a6a;background:none;border:1px solid rgba(217,70,239,.2);border-radius:7px;padding:3px 8px">Clear</button>
+      </div>
+      <div id="caff-log-entries" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+    <div class="info-card"><div style="color:#4ade80;font-weight:bold;margin-bottom:4px">Caffeine & your cycle ☕</div>In the luteal phase, caffeine sensitivity increases — consider reducing to 1 coffee/day in the week before your period. Iron absorption is also blocked by caffeine — space Iron supplement 2hrs away.</div>
+  </div>
+
+  <!-- ELECTROLYTES -->
+
+  <div class="panel" id="panel-electrolytes">
+    <div style="background:rgba(217,70,239,.06);border:1px solid rgba(217,70,239,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#b080d0;text-align:center;font-style:italic" id="elec-note"></div>
+    <div id="elec-cards"></div>
+    <div class="totals-card">
+      <div class="totals-title">Supplement Totals</div>
+      <div class="totals-grid" id="totals-grid"></div>
+      <div style="font-size:9px;color:#2a1a3a;margin-top:6px;text-align:center">Targets show supplement contribution only · food adds ~2,200mg Na, ~3,500mg K, ~320mg Mg</div>
+    </div>
+  </div>
+
+  <!-- SUPPS -->
+
+  <div class="panel" id="panel-supps">
+    <div style="border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:rgba(217,70,239,.06);border:1.5px solid rgba(217,70,239,.2)" id="supp-header">
+      <div><div style="font-size:14px;font-weight:bold;color:#d946ef" id="supp-title">Daily Supplements</div><div style="font-size:10px;color:#5a3a7a;margin-top:2px">Tap each when taken</div></div>
+      <div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#d946ef" id="supp-count">0<span style="font-size:13px;color:#5a3a7a">/5</span></div></div>
+    </div>
+    <div class="prog-bar-wrap" id="supp-prog"></div>
+    <div id="supp-cards"></div>
+  </div>
+
+  <!-- SEX -->
+
+  <div class="panel" id="panel-sex">
+    <div id="sex-cards"></div>
+  </div>
+
+  <!-- PERIOD -->
+
+  <div class="panel" id="panel-period">
+    <div id="period-cards"></div>
+  </div>
+
+  <!-- HISTORY -->
+
+  <div class="panel" id="panel-history">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.15em">Past 30 Days</div>
+      <button id="share-btn" style="font-size:11px;font-weight:bold;color:#d946ef;background:rgba(217,70,239,.1);border:1px solid rgba(217,70,239,.3);border-radius:8px;padding:5px 11px;cursor:pointer">📋 Share Today</button>
+    </div>
+    <div id="share-feedback" style="display:none;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.25);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#00e5a0;text-align:center">✓ Copied to clipboard!</div>
+    <div id="history-list"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────────────
+const DAY_TYPES=[
+  {id:'rest',label:'Rest Day',emoji:'😴',target:2500,seeking:1,salts:0,note:'Baseline maintenance — standard hydration'},
+  {id:'strength',label:'Strength Training',emoji:'🏋️',target:3000,seeking:1,salts:0,note:'Gym session — moderate sweat, Seeking Health sufficient'},
+  {id:'walking',label:'Walking',emoji:'🚶',target:3000,seeking:1,salts:0,note:'Light outdoor activity — moderate sweat'},
+  {id:'pilates',label:'Pilates',emoji:'🧘',target:2800,seeking:1,salts:0,note:'Core & flexibility — moderate sweat'},
+  {id:'vm',label:'VM Day',emoji:'🛍️',target:3000,seeking:1,salts:0,note:'On your feet all day — stay topped up consistently'},
+  {id:'golf_beers',label:'Cart Golf + Beers',emoji:'🍺',target:4000,seeking:2,salts:1,note:'Alcohol dehydrates — front-load water & electrolytes'},
+];
+
+const CIG_PLAN=[9,7,5,4,3,2,1,0]; // gentle 8-week plan to end of May
+
+const CAFF_SOURCES=[
+  {id:'espresso',label:'Coffee / Espresso',emoji:'☕',mg:80},
+  {id:'capsule',label:'Pod / Filter',emoji:'🫖',mg:60},
+  {id:'matcha',label:'Matcha / Green Tea',emoji:'🍵',mg:35},
+  {id:'energy',label:'Energy Drink',emoji:'⚡',mg:150},
+];
+
+const ELEC_PRODUCTS=[
+  {id:'seeking',label:'Seeking Health',sub:'Optimal Electrolyte',color:'#c084fc',rgb:'192,132,252',
+   minerals:['Potassium','Magnesium','Sodium'],mfn:s=>[s*500,s*125,s*150],hint:'Auto-logs +450ml water 💧 · Take with breakfast or pre-workout'},
+  {id:'salts',label:'Hydration Salts',sub:'Powder · ~1,000mg sodium per serve',color:'#38bdf8',rgb:'56,189,248',
+   minerals:['Sodium','Potassium','Magnesium'],mfn:s=>[s*1014,s*200,s*60],hint:'Auto-logs +450ml water 💧 · High-sweat sessions only'},
+];
+
+const SUPPS=[
+  {id:'omega',label:'Omega-3',emoji:'🐟',dose:'2 softgels · 1280mg',sub:'AM · with breakfast',color:'56,189,248',tip:'With breakfast — fat improves absorption',group:'AM with Breakfast'},
+  {id:'vitd',label:'Vitamin D3 + K2',emoji:'☀️',dose:'1000–2000 IU',sub:'AM · with breakfast',color:'251,191,36',tip:'Pair with K2 for bone health — take with fatty meal',group:'AM with Breakfast'},
+  {id:'iron',label:'Iron',emoji:'🩸',dose:'1 tablet',sub:'AM · 2hrs from caffeine',color:'239,68,68',tip:'Coffee & tea block absorption — space at least 2 hours away from caffeine',group:'AM with Breakfast'},
+  {id:'folate',label:'Folate (B9)',emoji:'🌿',dose:'400mcg',sub:'AM · with breakfast',color:'52,211,153',tip:'Essential daily — supports energy & cell health',group:'AM with Breakfast'},
+  {id:'mag',label:'Magnesium Glycinate',emoji:'😴',dose:'200–300mg',sub:'PM · before bed',color:'167,139,250',tip:'Best at night — supports sleep quality & muscle recovery',group:'PM Before Bed'},
+];
+
+const PERIOD_SYMPTOMS=[
+  {id:'cramps',emoji:'😣',label:'Cramps'},
+  {id:'bloating',emoji:'🫃',label:'Bloating'},
+  {id:'mood',emoji:'😤',label:'Mood swings'},
+  {id:'fatigue',emoji:'😴',label:'Fatigue'},
+  {id:'headache',emoji:'🤕',label:'Headache'},
+  {id:'spotting',emoji:'🩸',label:'Spotting'},
+  {id:'tender',emoji:'😬',label:'Tender'},
+  {id:'nausea',emoji:'🤢',label:'Nausea'},
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const today=new Date().toDateString();
+const getWeekKey=()=>{const d=new Date(),day=(d.getDay()+6)%7,mon=new Date(d);mon.setDate(d.getDate()-day);return`${mon.getFullYear()}-${mon.getMonth()}-${mon.getDate()}`;};
+const weekKey=getWeekKey();
+const ld=(k,def)=>{try{const v=localStorage.getItem(k+'_'+today);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sd=(k,v)=>{try{localStorage.setItem(k+'_'+today,JSON.stringify(v));}catch{}};
+const ldw=(k,def)=>{try{const v=localStorage.getItem(k+'_'+weekKey);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sdw=(k,v)=>{try{localStorage.setItem(k+'_'+weekKey,JSON.stringify(v));}catch{}};
+const ldg=(k,def)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sdg=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+const fml=ml=>ml>=1000?(ml/1000).toFixed(1)+'L':ml+'ml';
+const wc=pct=>{if(pct>=100)return'#00e5a0';if(pct>=60)return'#d946ef';if(pct>=30)return'#ffd54f';return'#ef5350';};
+const ws=pct=>{if(pct>=100)return{l:'Well hydrated 💪',c:'#00e5a0'};if(pct>=60)return{l:'Getting there 👍',c:'#d946ef'};if(pct>=30)return{l:'Drink up 🚰',c:'#ffd54f'};return{l:'Dehydrated! 🚨',c:'#ef5350'};};
+const now=()=>new Date();
+const fmt05=v=>v%1===0?String(v):v.toFixed(1);
+const getAppWeek=s=>{if(!s)return 0;const diff=Math.floor((new Date()-new Date(s))/86400000);return Math.min(Math.floor(diff/7),CIG_PLAN.length-1);};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let viewState=null;
+function getS(){return viewState||state;}
+
+let state={
+  weight:ld('weight',0),
+  heightCm:ldg('heightCm',0),
+  water:ld('water',0),
+  dayTypeId:ld('daytype','rest'),
+  seeking:ld('seeking',0),
+  salts:ld('salts',0),
+  sessionDrinks:ld('sessionDrinks',0),
+  weekDrinks:ldw('weekDrinks',0),
+  lastDrinkTime:ld('lastDrinkTime',''),
+  cigs:ld('cigs',0),
+  cigStartDate:ldg('cigStartDate',new Date().toISOString().slice(0,10)),
+  lastSmokeTime:ld('lastSmokeTime',''),
+  caffLog:ld('caffLog',[]),
+  caffOverride:false,
+  drinkOverride:false,
+  suppOmega:ld('suppOmega',false),
+  suppVitd:ld('suppVitd',false),
+  suppIron:ld('suppIron',false),
+  suppFolate:ld('suppFolate',false),
+  suppMag:ld('suppMag',false),
+  sexActivity:ld('sexActivity',false),
+  sexActivityTime:ld('sexActivityTime',''),
+  sexMasturbation:ld('sexMasturbation',false),
+  sexMasturbationTime:ld('sexMasturbationTime',''),
+  periodLastStart:ldg('periodLastStart',''),
+  periodLastEnd:ldg('periodLastEnd',''),
+  periodCycleLength:ldg('periodCycleLength',28),
+  periodSymptoms:ld('periodSymptoms',[]),
+  exStrengthMins:ldw('exStrengthMins',0),
+  exWalkingMins:ldw('exWalkingMins',0),
+  exPilatesMins:ldw('exPilatesMins',0),
+  activeTab:'smokes',
+};
+
+function saveAll(){
+  sd('weight',state.weight);
+  sd('water',state.water);sd('daytype',state.dayTypeId);
+  sd('seeking',state.seeking);sd('salts',state.salts);
+  sd('sessionDrinks',state.sessionDrinks);sdw('weekDrinks',state.weekDrinks);
+  sd('lastDrinkTime',state.lastDrinkTime);
+  sd('cigs',state.cigs);sdg('cigStartDate',state.cigStartDate);
+  sd('lastSmokeTime',state.lastSmokeTime);
+  sd('caffLog',state.caffLog);
+  sd('suppOmega',state.suppOmega);sd('suppVitd',state.suppVitd);
+  sd('suppIron',state.suppIron);sd('suppFolate',state.suppFolate);sd('suppMag',state.suppMag);
+  sd('sexActivity',state.sexActivity);sd('sexActivityTime',state.sexActivityTime);
+  sd('sexMasturbation',state.sexMasturbation);sd('sexMasturbationTime',state.sexMasturbationTime);
+  sdg('periodLastStart',state.periodLastStart);sdg('periodLastEnd',state.periodLastEnd);
+  sdg('periodCycleLength',state.periodCycleLength);
+  sd('periodSymptoms',state.periodSymptoms);
+  sdw('exStrengthMins',state.exStrengthMins);
+  sdw('exWalkingMins',state.exWalkingMins);
+  sdw('exPilatesMins',state.exPilatesMins);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+
+// Day dropdown
+const dd=document.getElementById('day-dropdown');
+DAY_TYPES.forEach(d=>{
+  const b=document.createElement('button');
+  b.className='day-option'+(d.id===state.dayTypeId?' active':'');
+  b.dataset.id=d.id;
+  b.innerHTML=`<span>${d.emoji} ${d.label}</span><span class="ml">${fml(d.target)}</span>`;
+  b.onclick=()=>{state.dayTypeId=d.id;saveAll();setDD(false);render();};
+  dd.appendChild(b);
+});
+let ddOpen=false;
+function setDD(v){ddOpen=v;dd.classList.toggle('open',v);}
+document.getElementById('day-btn').onclick=()=>setDD(!ddOpen);
+document.addEventListener('click',e=>{if(!e.target.closest('.day-selector'))setDD(false);});
+
+// Tabs
+const TABS=[
+  {id:'smokes',emoji:'🚬',title:'Smokes'},
+  {id:'drinks',emoji:'🍷',title:'Drinks'},
+  {id:'weight',emoji:'⚖️',title:'Weight'},
+  {id:'water',emoji:'💧',title:'Water'},
+  {id:'exercise',emoji:'🏃',title:'Exercise'},
+  {id:'caffeine',emoji:'☕',title:'Caffeine'},
+  {id:'electrolytes',emoji:'⚡',title:'Electro'},
+  {id:'supps',emoji:'💊',title:'Supps'},
+  {id:'sex',emoji:'💋',title:'Sex'},
+  {id:'period',emoji:'🌸',title:'Period'},
+];
+const tabsEl=document.getElementById('tabs');
+TABS.forEach(t=>{
+  const b=document.createElement('button');
+  b.className='tab'+(t.id===state.activeTab?' active':'');
+  b.id='tab-'+t.id;
+  b.innerHTML=`<span class="tab-icon">${t.emoji}</span><span>${t.title}</span>`;
+  b.onclick=()=>{
+    state.activeTab=t.id;
+    const hp=document.getElementById('panel-history');
+    if(hp){hp.style.display='none';hp.className='panel';}
+    const hb=document.getElementById('history-toggle-btn');
+    if(hb){hb.style.color='#6a4a8a';hb.style.background='rgba(106,74,138,.1)';hb.style.border='1px solid rgba(106,74,138,.25)';}
+    TABS.forEach(x=>{
+      document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');
+      const p=document.getElementById('panel-'+x.id);
+      if(p){p.className='panel'+(x.id===t.id?' active':'');p.style.display=x.id===t.id?'block':'none';}
+    });
+    try{
+      if(t.id==='sex')renderSex();
+      else if(t.id==='period')renderPeriod();
+      else if(t.id==='exercise')renderExercise();
+      else if(t.id==='weight')renderWeight();
+    }catch(err){console.error('Tab render failed:',err.message);}
+  };
+  tabsEl.appendChild(b);
+});
+
+// History toggle
+document.getElementById('history-toggle-btn').onclick=()=>{
+  const panel=document.getElementById('panel-history');
+  const btn=document.getElementById('history-toggle-btn');
+  if(!panel)return;
+  const isOpen=panel.style.display==='block';
+  document.querySelectorAll('.panel').forEach(p=>{p.style.display='none';p.className='panel';});
+  if(!isOpen){
+    panel.style.display='block';panel.className='panel active';
+    saveSnapshot();try{renderHistory();}catch(err){console.error(err);}
+    btn.style.color='#d946ef';btn.style.background='rgba(217,70,239,.15)';btn.style.border='1px solid rgba(217,70,239,.4)';
+  } else {
+    const ap=document.getElementById('panel-'+( state.activeTab||'smokes'));
+    if(ap){ap.style.display='block';ap.className='panel active';}
+    btn.style.color='#6a4a8a';btn.style.background='rgba(106,74,138,.1)';btn.style.border='1px solid rgba(106,74,138,.25)';
+  }
+};
+
+// Water buttons
+document.getElementById('tap-water').onclick=()=>{state.water+=450;saveAll();render();};
+document.getElementById('undo-water').onclick=()=>{state.water=Math.max(0,state.water-450);saveAll();render();};
+document.getElementById('reset-btn').onclick=()=>{
+  if(!confirm('Reset all of today\'s tracking?'))return;
+  state.water=0;state.seeking=0;state.salts=0;
+  state.sessionDrinks=0;state.cigs=0;state.caffLog=[];
+  state.suppOmega=false;state.suppVitd=false;state.suppIron=false;state.suppFolate=false;state.suppMag=false;
+  state.sexActivity=false;state.sexActivityTime='';state.sexMasturbation=false;state.sexMasturbationTime='';
+  state.periodSymptoms=[];
+  saveAll();render();
+};
+
+// Drinks
+let drinkWarnTimer=null;
+function showDrinkWarn(msg){
+  const el=document.getElementById('drink-warning');
+  el.textContent=msg;el.style.display='block';
+  if(drinkWarnTimer)clearTimeout(drinkWarnTimer);
+  drinkWarnTimer=setTimeout(()=>{el.style.display='none';},3500);
+}
+function addDrink(amt){
+  const h=now().getHours();
+  if(h>=20&&!state.drinkOverride){showDrinkWarn('⏰ Past 8pm — tap Override to log.');return;}
+  if(state.sessionDrinks>=4){showDrinkWarn('🚫 4 std drink session limit reached.');return;}
+  if(state.weekDrinks>=10){showDrinkWarn('🚫 10 std drink weekly limit reached.');return;}
+  state.sessionDrinks=Math.round((state.sessionDrinks+amt)*10)/10;
+  state.weekDrinks=Math.round((state.weekDrinks+amt)*10)/10;
+  state.water+=Math.round(250*amt);
+  state.lastDrinkTime=now().toTimeString().slice(0,5);
+  saveAll();render();
+}
+document.getElementById('drink-minus').onclick=()=>{
+  if(state.sessionDrinks<=0)return;
+  const r=state.sessionDrinks>=1?1:state.sessionDrinks;
+  state.sessionDrinks=Math.round(Math.max(0,state.sessionDrinks-r)*10)/10;
+  state.weekDrinks=Math.round(Math.max(0,state.weekDrinks-r)*10)/10;
+  state.water=Math.max(0,state.water-Math.round(250*r));
+  saveAll();render();
+};
+document.getElementById('drink-1').onclick=()=>addDrink(1);
+document.getElementById('drink-15').onclick=()=>addDrink(1.5);
+
+// Smokes
+document.addEventListener('click',e=>{
+  if(e.target.id==='cig-plus'){state.cigs=Math.round((state.cigs+1)*10)/10;state.lastSmokeTime=now().toTimeString().slice(0,5);saveAll();renderSmokes();}
+  if(e.target.id==='cig-minus'){state.cigs=Math.max(0,Math.round((state.cigs-1)*10)/10);saveAll();renderSmokes();}
+  if(e.target.id==='cig-restart'){if(confirm('Restart the quit plan from today?')){state.cigStartDate=new Date().toISOString().slice(0,10);state.cigs=0;sdg('cigStartDate',state.cigStartDate);saveAll();renderSmokes();}}
+  if(e.target.id==='caff-override-btn'){state.caffOverride=true;renderCaff();}
+  if(e.target.id==='caff-override-cancel'){state.caffOverride=false;renderCaff();}
+  if(e.target.id==='drink-override-btn'){state.drinkOverride=true;renderDrinks();}
+  if(e.target.id==='drink-override-cancel'){state.drinkOverride=false;renderDrinks();}
+  if(e.target.id==='share-btn'){
+    const text=buildShareText();
+    navigator.clipboard.writeText(text).then(()=>{
+      const fb=document.getElementById('share-feedback');fb.style.display='block';
+      setTimeout(()=>fb.style.display='none',2500);
+    }).catch(()=>prompt('Copy summary:',text));
+  }
+  if(e.target.id==='period-start-btn'){
+    state.periodLastStart=new Date().toISOString().slice(0,10);
+    state.periodLastEnd='';
+    sdg('periodLastStart',state.periodLastStart);sdg('periodLastEnd','');
+    renderPeriod();
+  }
+  if(e.target.id==='period-end-btn'){
+    state.periodLastEnd=new Date().toISOString().slice(0,10);
+    sdg('periodLastEnd',state.periodLastEnd);
+    renderPeriod();
+  }
+  if(e.target.dataset&&e.target.dataset.sym){
+    const sym=e.target.dataset.sym;
+    const arr=state.periodSymptoms;
+    const idx=arr.indexOf(sym);
+    if(idx>-1)arr.splice(idx,1);else arr.push(sym);
+    sd('periodSymptoms',state.periodSymptoms);
+    renderPeriod();
+  }
+  if(e.target.id==='weight-save-btn'){
+    const wi=document.getElementById('weight-input');const hi=document.getElementById('height-input');
+    if(wi){const v=parseFloat(wi.value)||0;if(v>0)state.weight=v;}
+    if(hi){const v=parseFloat(hi.value)||0;if(v>0){state.heightCm=v;sdg('heightCm',v);}}
+    saveAll();try{renderWeight();}catch(err){console.error(err);}
+  }
+});
+
+// Caffeine
+document.getElementById('caff-clear').onclick=()=>{if(confirm('Clear caffeine log?')){state.caffLog=[];saveAll();render();}};
+
+// Period cycle length input
+document.addEventListener('change',e=>{
+  if(e.target.id==='cycle-length-input'){
+    const v=parseInt(e.target.value)||28;
+    state.periodCycleLength=Math.max(21,Math.min(40,v));
+    sdg('periodCycleLength',state.periodCycleLength);
+    renderPeriod();
+  }
+});
+
+// ── Render Smokes ─────────────────────────────────────────────────────────────
+function renderSmokes(){
+  const s=getS();
+  const container=document.getElementById('smokes-cards');
+  if(!container)return;
+  const appWeek=getAppWeek(state.cigStartDate);
+  const goal=CIG_PLAN[appWeek]||0;
+  const over=s.cigs>goal,quit=goal===0;
+  const CIG_PRICE=1.80; // AUD per cigarette
+  const dailySaving=(9-(s.cigs||0))*CIG_PRICE;
+  const weekSaving=dailySaving*7;
+  const lastSmoke=state.lastSmokeTime;
+
+  container.innerHTML=`
+    <!-- Priority banner -->
+    <div style="background:rgba(251,146,60,.08);border:1.5px solid rgba(251,146,60,.3);border-radius:14px;padding:14px 16px;margin-bottom:12px;text-align:center">
+      <div style="font-size:10px;color:#a06020;text-transform:uppercase;letter-spacing:.15em;margin-bottom:3px" >Quit Plan · Week ${appWeek+1} of 5</div>
+      ${quit
+        ? '<div style="font-size:22px;font-weight:bold;color:#00e5a0">🎉 Quit achieved!</div>'
+        : `<div style="font-size:30px;font-weight:bold;color:#fb923c">${fmt05(goal)}</div><div style="font-size:11px;color:#8a5a20">cigarettes / day target</div>`}
+    </div>
+
+    <!-- Today card -->
+    <div class="card" style="background:${over?'rgba(239,83,80,.1)':quit&&s.cigs===0?'rgba(0,229,160,.08)':'rgba(251,146,60,.06)'};border:1.5px solid ${over?'rgba(239,83,80,.4)':quit&&s.cigs===0?'rgba(0,229,160,.3)':'rgba(251,146,60,.25)'};margin-bottom:12px;padding:18px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div class="card-title" style="color:${over?'#ef5350':quit&&s.cigs===0?'#00e5a0':'#fb923c'}">${quit&&s.cigs===0?'Smoke-free today 🌟':'Today\'s Smokes'}</div>
+          <div class="card-sub">${quit?'Keep it up!':'Goal: '+fmt05(goal)+' or fewer'}</div>
+          ${lastSmoke?`<div style="font-size:9px;color:#6a4a3a;margin-top:2px">Last: ${lastSmoke}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:32px;font-weight:bold;color:${over?'#ef5350':'#fb923c'}">${fmt05(s.cigs||0)}</div>
+          ${!quit?`<div style="font-size:10px;color:#6a4a30">/ ${fmt05(goal)} target</div>`:''}
+        </div>
+      </div>
+      ${!quit&&goal>0?`
+      <div style="height:8px;background:rgba(251,146,60,.1);border-radius:4px;margin-bottom:4px">
+        <div style="height:100%;width:${Math.min((s.cigs/goal)*100,100)}%;background:${over?'#ef5350':'#fb923c'};border-radius:4px;transition:width .4s"></div>
+      </div>
+      ${over?`<div style="font-size:10px;color:#ef7070;margin-bottom:10px;text-align:center">+${fmt05(s.cigs-goal)} over target today</div>`:'<div style="margin-bottom:10px"></div>'}
+      `:''}
+      <div style="display:flex;gap:10px">
+        <button id="cig-minus" style="flex:1;padding:11px;border-radius:11px;border:1px solid rgba(251,146,60,.28);background:rgba(251,146,60,.06);color:#fb923c;font-size:22px;${state.cigs===0?'opacity:.4':''}">−</button>
+        <button id="cig-plus" style="flex:2;padding:11px;border-radius:11px;border:1px solid rgba(251,146,60,.45);background:rgba(251,146,60,.15);color:#fb923c;font-size:13px;font-weight:bold">🚬 Log 1 Cig</button>
+      </div>
+    </div>
+
+    <!-- Savings card -->
+    <div style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:14px;padding:13px 16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
+      <div>
+        <div style="font-size:20px;font-weight:bold;color:${dailySaving>0?'#34d399':'#6a4a3a'}">$${dailySaving>0?dailySaving.toFixed(2):'0.00'}</div>
+        <div style="font-size:9px;color:#2a5a4a;text-transform:uppercase;letter-spacing:.1em;margin-top:2px">saved today</div>
+      </div>
+      <div>
+        <div style="font-size:20px;font-weight:bold;color:${weekSaving>0?'#34d399':'#6a4a3a'}">$${weekSaving>0?weekSaving.toFixed(0):'0'}/wk</div>
+        <div style="font-size:9px;color:#2a5a4a;text-transform:uppercase;letter-spacing:.1em;margin-top:2px">projected saving</div>
+      </div>
+    </div>
+
+    <!-- Roadmap -->
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:10px;color:#7a5a30;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px">Reduction Roadmap</div>
+      <div class="cig-roadmap">
+        ${CIG_PLAN.map((g,i)=>{
+          const cur=i===appWeek,past=i<appWeek;
+          return`<div class="cig-cell"><div class="cig-box" style="background:${g===0?'rgba(0,229,160,.2)':cur?'rgba(251,146,60,.25)':past?'rgba(255,255,255,.1)':'rgba(255,255,255,.03)'};border:1px solid ${g===0?'rgba(0,229,160,.4)':cur?'rgba(251,146,60,.5)':'rgba(255,255,255,.07)'};font-weight:${cur?'bold':'normal'};color:${g===0?'#00e5a0':cur?'#fb923c':past?'#5a7a5a':'#2a3a4a'}">${g===0?'🚭':fmt05(g)}</div><div class="cig-wlbl" style="color:${cur?'#8a6a30':'#2a3a4a'}">W${i+1}</div></div>`;
+        }).join('')}
+      </div>
+      <div style="font-size:9px;color:#4a3a20;margin-top:8px;text-align:center">9→7→5→4→3→2→1→🚭 by end of May · you've got this 💪</div>
+    </div>
+
+    <!-- Start date -->
+    <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:#4a3a5a">Plan started: ${new Date(state.cigStartDate).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+      <button id="cig-restart" style="font-size:10px;color:#5a4a8a;background:none;border:1px solid rgba(217,70,239,.2);border-radius:8px;padding:5px 9px">Restart</button>
+    </div>
+  `;
+}
+
+// ── Render Drinks ─────────────────────────────────────────────────────────────
+function renderDrinks(){
+  const s=getS();
+  const h=now().getHours(),mins=now().getMinutes();
+  const pastCutRaw=h>=20,minsLeft=pastCutRaw?0:(20-h)*60-mins;
+  const pastCut=pastCutRaw&&!state.drinkOverride;
+  const blocked=pastCut||state.sessionDrinks>=4||state.weekDrinks>=10;
+  const banner=document.getElementById('drink-cutoff-banner');
+  if(pastCutRaw&&!state.drinkOverride)banner.innerHTML=`<div class="warning-banner" style="background:rgba(239,83,80,.12);border:1.5px solid rgba(239,83,80,.4)"><div style="font-size:14px;color:#ef5350;font-weight:bold">⏰ 8pm cutoff reached</div><div style="font-size:11px;color:#9a4a48;margin-top:2px">No more drinks tonight.</div><button id="drink-override-btn" style="margin-top:8px;font-size:10px;color:#ef9090;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4);border-radius:7px;padding:5px 12px;cursor:pointer">⚠️ Override — log anyway</button></div>`;
+  else if(pastCutRaw&&state.drinkOverride)banner.innerHTML=`<div class="warning-banner" style="background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.4)"><div style="font-size:13px;color:#fbbf24;font-weight:bold">⚠️ Override active</div><button id="drink-override-cancel" style="margin-top:6px;font-size:10px;color:#9a7a30;background:none;border:1px solid rgba(251,191,36,.3);border-radius:7px;padding:4px 10px;cursor:pointer">Cancel</button></div>`;
+  else if(minsLeft<=120)banner.innerHTML=`<div class="warning-banner" style="background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35)"><div style="font-size:12px;color:#fbbf24">⚠️ 8pm cutoff in ${Math.floor(minsLeft/60)}h ${minsLeft%60}m</div></div>`;
+  else banner.innerHTML='';
+
+  const sc=document.getElementById('session-card');
+  sc.style.background=state.sessionDrinks>=4?'rgba(239,83,80,.1)':'rgba(244,114,182,.07)';
+  sc.style.border=`1.5px solid rgba(244,114,182,${state.sessionDrinks>=4?0.5:.25})`;
+  document.getElementById('session-count').textContent=fmt05(s.sessionDrinks||0);
+  document.getElementById('session-count').style.color=state.sessionDrinks>=4?'#ef5350':'#f472b6';
+  const dots=document.getElementById('drink-dots');
+  dots.innerHTML=Array.from({length:4},(_,i)=>`<div class="drink-dot" style="background:${i<state.sessionDrinks?(state.sessionDrinks>=4?'#ef5350':'#f472b6'):'rgba(244,114,182,.12)'}"></div>`).join('');
+  const d1=document.getElementById('drink-1'),d15=document.getElementById('drink-15');
+  [d1,d15].forEach(b=>{b.style.border='1px solid rgba(244,114,182,'+(blocked?0.15:.5)+')';b.style.background='rgba(244,114,182,'+(blocked?0.04:.18)+')';b.style.color=blocked?'#5a3a4a':'#f472b6';});
+  if(blocked){d1.innerHTML=pastCut?'Cutoff':'Limit';d15.innerHTML=pastCut?'':'-';}
+  else{d1.innerHTML='+ 1 std<br><span style="font-size:10px;font-weight:normal">+250ml 💧</span>';d15.innerHTML='+ 1.5 std<br><span style="font-size:10px;font-weight:normal">+375ml 💧</span>';}
+  const wkLeft=Math.max(10-state.weekDrinks,0);
+  document.getElementById('week-count').innerHTML=`${fmt05(s.weekDrinks||0)} <span style="font-size:12px;color:#7a4a6a">/ 10</span>`;
+  document.getElementById('week-count').style.color=state.weekDrinks>=10?'#ef5350':'#f472b6';
+  document.getElementById('week-bar').style.width=Math.min((state.weekDrinks/10)*100,100)+'%';
+  document.getElementById('week-bar').style.background=state.weekDrinks>=10?'#ef5350':'#f472b6';
+  document.getElementById('week-remaining').textContent=wkLeft>0?`${fmt05(wkLeft)} drink${wkLeft!==1?'s':''} remaining this week`:'Weekly limit hit 💪';
+}
+
+// ── Render Weight ─────────────────────────────────────────────────────────────
+function renderWeight(){
+  const s=getS();
+  const container=document.getElementById('weight-cards');
+  if(!container)return;
+  const w=s.weight;
+  const h=state.heightCm;
+  const lbs=w?(w*2.2046).toFixed(1):'';
+  let bmiHTML='';
+  if(w&&h){
+    const hm=h/100,bmi=Math.round((w/(hm*hm))*10)/10;
+    const bmiCat=bmi<18.5?'Underweight':bmi<25?'Healthy':bmi<30?'Overweight':'Obese';
+    const bmiColor=bmi<18.5?'#fbbf24':bmi<25?'#34d399':bmi<30?'#fb923c':'#ef5350';
+    bmiHTML=`<div style="text-align:center;margin-top:10px;padding:10px;background:rgba(0,0,0,.15);border-radius:10px">
+      <div style="font-size:22px;font-weight:bold;color:${bmiColor}">${bmi}</div>
+      <div style="font-size:10px;color:${bmiColor};margin-top:1px">${bmiCat}</div>
+      <div style="font-size:9px;color:#4a3a5a;margin-top:2px">BMI · ${h}cm height</div>
+    </div>`;
+  }
+
+  // Last 7 days weight history
+  let histHTML='';
+  const wHistory=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=d.toDateString();
+    if(key===today){
+      if(state.weight)wHistory.push({label:i===0?'Today':d.toLocaleDateString('en-AU',{weekday:'short'}),w:state.weight});
+    } else {
+      try{const v=localStorage.getItem('snap_'+key);if(v){const snap=JSON.parse(v);if(snap.weight)wHistory.push({label:d.toLocaleDateString('en-AU',{weekday:'short'}),w:snap.weight});}}catch{}
+    }
+  }
+  if(wHistory.length>1){
+    const minW=Math.min(...wHistory.map(x=>x.w));const maxW=Math.max(...wHistory.map(x=>x.w));
+    const range=maxW-minW||0.5;
+    const trend=wHistory[wHistory.length-1].w-wHistory[0].w;
+    histHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px;margin-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.15em">7-Day Trend</div>
+        <div style="font-size:11px;color:${trend<0?'#34d399':trend>0?'#ef5350':'#6a4a8a'}">${trend<0?'↓':trend>0?'↑':'→'} ${Math.abs(trend).toFixed(1)}kg</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:4px;height:50px;margin-bottom:6px">
+        ${wHistory.map(x=>{const pct=((x.w-minW)/range)*100;const h=Math.max(pct,8);return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:100%;height:${h}%;min-height:4px;background:rgba(217,70,239,.5);border-radius:3px 3px 0 0"></div></div>`;}).join('')}
+      </div>
+      <div style="display:flex;gap:4px">
+        ${wHistory.map(x=>`<div style="flex:1;text-align:center;font-size:7px;color:#4a3a5a">${x.label}<br/><span style="color:#c084fc">${x.w}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML=`
+    <div style="background:rgba(217,70,239,.06);border:1px solid rgba(217,70,239,.2);border-radius:16px;padding:16px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:bold;color:#d946ef;margin-bottom:12px">⚖️ Morning Weigh-in</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Weight (kg)</div>
+          <input id="weight-input" type="number" step="0.1" min="30" max="200" value="${w||''}" placeholder="e.g. 68.5"
+            style="width:100%;background:rgba(217,70,239,.08);border:1.5px solid rgba(217,70,239,.3);border-radius:10px;padding:10px 12px;color:#f0e8f4;font-size:16px;font-family:Georgia,serif;-webkit-appearance:none"/>
+          ${w?`<div style="font-size:9px;color:#6a4a8a;margin-top:4px">${lbs} lbs</div>`:''}
+        </div>
+        <div>
+          <div style="font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Height (cm)</div>
+          <input id="height-input" type="number" step="1" min="100" max="220" value="${h||''}" placeholder="e.g. 165"
+            style="width:100%;background:rgba(217,70,239,.08);border:1.5px solid rgba(217,70,239,.3);border-radius:10px;padding:10px 12px;color:#f0e8f4;font-size:16px;font-family:Georgia,serif;-webkit-appearance:none"/>
+          <div style="font-size:9px;color:#3a2a4a;margin-top:4px">Saved permanently</div>
+        </div>
+      </div>
+      ${bmiHTML}
+      <button id="weight-save-btn" style="width:100%;margin-top:12px;padding:11px;border-radius:11px;font-size:13px;font-weight:bold;border:1.5px solid rgba(217,70,239,.45);background:rgba(217,70,239,.18);color:#d946ef;cursor:pointer">Save</button>
+    </div>
+    ${histHTML}
+  `;
+}
+
+// ── Render Water ──────────────────────────────────────────────────────────────
+function renderWater(){
+  const s=getS();
+  const dt=DAY_TYPES.find(d=>d.id===s.dayTypeId)||DAY_TYPES[0];
+  const target=dt.target+((s.sessionDrinks||0)*250);
+  const pct=Math.min((state.water/target)*100,100);
+  const waveY=100-pct;
+  const color=wc(pct);
+  document.getElementById('wg-stop1').setAttribute('stop-color',color);
+  document.getElementById('wg-stop2').setAttribute('stop-color',color);
+  document.getElementById('wave-rect').setAttribute('y',waveY*1.76);
+  document.getElementById('wave-rect').setAttribute('fill','url(#wg)');
+  document.getElementById('wave-path').setAttribute('d',`M0,${waveY*1.76} Q50,${waveY*1.76-8} 100,${waveY*1.76} Q150,${waveY*1.76+8} 200,${waveY*1.76} L200,200 L0,200 Z`);
+  document.getElementById('wave-path').setAttribute('fill',color);
+  document.getElementById('arc').setAttribute('stroke',color);
+  document.getElementById('arc').setAttribute('stroke-dasharray',`${(pct/100)*553} 553`);
+  document.getElementById('svg-intake').textContent=fml(s.water||0);
+  document.getElementById('svg-target').textContent=`of ${fml(target)}`;
+  document.getElementById('svg-pct').textContent=`${Math.round(pct)}%`;
+  document.getElementById('svg-pct').setAttribute('fill',color);
+  const sp=ws(pct);
+  const pill=document.getElementById('status-pill');
+  pill.textContent=sp.l;pill.style.background=sp.c+'16';pill.style.border=`1px solid ${sp.c}38`;pill.style.color=sp.c;
+  const rem=Math.max(target-(s.water||0),0);
+  const cups=Math.ceil(rem/450);
+  document.getElementById('stat-remaining').textContent=fml(rem);
+  document.getElementById('stat-remaining').style.color=rem>0?'#ffd54f':'#00e5a0';
+  document.getElementById('stat-cups').textContent=rem>0?`${cups}×450ml`:'Done! ✓';
+  document.getElementById('stat-cups').style.color=rem>0?'#d946ef':'#00e5a0';
+  document.getElementById('undo-water').disabled=state.water===0;
+  document.getElementById('day-label').textContent=`${dt.emoji} ${dt.label}`;
+  document.querySelectorAll('.day-option').forEach(o=>o.classList.toggle('active',o.dataset.id===state.dayTypeId));
+}
+
+// ── Render Exercise ───────────────────────────────────────────────────────────
+function renderExercise(){
+  const container=document.getElementById('exercise-cards');
+  if(!container)return;
+  container.innerHTML='';
+
+  const hdr=document.createElement('div');
+  hdr.style.cssText='background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#4a9a7a;text-align:center;font-style:italic';
+  hdr.textContent='Weekly exercise · resets Monday · consistency beats intensity';
+  container.appendChild(hdr);
+
+  const trainItems=[
+    {key:'exStrengthMins',emoji:'🏋️',label:'Strength Training',sub:'Goal: 90 min / week',color:'251,146,60',note:'2–3 sessions · compound movements build long-term metabolic health',session:40,goal:90},
+    {key:'exWalkingMins',emoji:'🚶',label:'Walking',sub:'Goal: 150 min / week',color:'74,222,128',note:'5+ sessions · low-intensity, high-return — supports fat burn & mood',session:30,goal:150},
+    {key:'exPilatesMins',emoji:'🧘',label:'Pilates',sub:'Goal: 120 min / week',color:'192,132,252',note:'3 sessions · core, posture & pelvic floor — syncs well with cycle phases',session:45,goal:120},
+  ];
+
+  const trainSec=document.createElement('div');
+  trainSec.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  trainSec.innerHTML='<div style="font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">Weekly Training</div>';
+
+  trainItems.forEach(it=>{
+    const mins=state[it.key];
+    const pct=Math.min((mins/it.goal)*100,100);
+    const done=mins>=it.goal;
+    const h=Math.floor(mins/60),m=mins%60;
+    const gh=Math.floor(it.goal/60),gm=it.goal%60;
+    const timeStr=h>0?(h+'h '+(m>0?m+'m':'')):(m+'m');
+    const goalStr=gh>0?(gh+'h '+(gm>0?gm+'m':'')):(gm+'m');
+    const barColor=done?'#00e5a0':('rgba('+it.color+',1)');
+    const block=document.createElement('div');
+    block.style.cssText='padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)';
+    block.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:16px">${it.emoji}</span>
+            <span style="font-size:13px;font-weight:bold;color:rgba(${it.color},1)">${it.label}</span>
+            ${done?'<span style="font-size:9px;color:#00e5a0;background:rgba(0,229,160,.1);border-radius:4px;padding:1px 5px">✓ Goal!</span>':''}
+          </div>
+          <div style="font-size:10px;color:#4a3a6a;margin-top:2px;padding-left:22px">${it.sub}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:8px">
+          <div style="font-size:14px;font-weight:bold;color:${done?'#00e5a0':('rgba('+it.color+',1)')}">${timeStr}</div>
+          <div style="font-size:9px;color:#3a2a5a">of ${goalStr}</div>
+        </div>
+      </div>
+      <div style="height:7px;background:rgba(${it.color},.1);border-radius:4px;margin-bottom:8px">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div style="font-size:9px;color:rgba(${it.color},.4);margin-bottom:8px">${it.note}</div>
+      <div style="display:flex;gap:8px">
+        <button data-train="${it.key}" data-act="minus" style="padding:8px 12px;border-radius:10px;font-size:18px;border:1px solid rgba(${it.color},.28);background:rgba(${it.color},.07);color:rgba(${it.color},1);cursor:pointer">−</button>
+        <button data-train="${it.key}" data-act="plus" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(${it.color},.45);background:rgba(${it.color},.16);color:rgba(${it.color},1);cursor:pointer">+ Log ${it.session}min session</button>
+      </div>`;
+    trainSec.appendChild(block);
+  });
+  container.appendChild(trainSec);
+
+  // Cycle-aware exercise tip
+  const phaseInfo=getPeriodPhase();
+  if(phaseInfo){
+    const tip=document.createElement('div');
+    tip.style.cssText='background:rgba(251,113,133,.06);border:1px solid rgba(251,113,133,.2);border-radius:12px;padding:11px 14px;font-size:11px;color:#9a4a6a;line-height:1.6';
+    const phaseTips={
+      menstrual:'🌸 Menstrual phase — gentle movement only. Walking & light stretching are ideal. Skip heavy lifting today.',
+      follicular:'⚡ Follicular phase — energy is rising! Great week for strength training and higher-intensity workouts.',
+      ovulation:'🌟 Ovulation phase — peak energy & strength. Push hard in the gym this week.',
+      luteal:'🌙 Luteal phase — energy dipping. Pilates, walking & yoga are your friends. Reduce intensity.',
+    };
+    tip.innerHTML='<div style="font-weight:bold;color:#fb7185;margin-bottom:4px">Your cycle phase · '+phaseInfo.phase+'</div>'+phaseTips[phaseInfo.id];
+    container.appendChild(tip);
+  }
+
+  container.querySelectorAll('button[data-train]').forEach(b=>{
+    b.onclick=()=>{
+      const k=b.dataset.train;const sm=trainItems.find(x=>x.key===k)?.session||30;
+      if(b.dataset.act==='plus')state[k]=state[k]+sm;
+      else state[k]=Math.max(0,state[k]-sm);
+      saveAll();try{renderExercise();}catch(err){console.error(err);}
+    };
+  });
+}
+
+// ── Render Caffeine ───────────────────────────────────────────────────────────
+function renderCaff(){
+  const h=now().getHours(),mins=now().getMinutes();
+  const pastCutRaw=h>=13,minsLeft=pastCutRaw?0:(13-h)*60-mins;
+  const pastCut=pastCutRaw&&!state.caffOverride;
+  const totalMg=state.caffLog.reduce((a,e)=>a+e.mg,0);
+  const over=totalMg>400;
+  const banner=document.getElementById('caff-banner');
+  if(pastCutRaw&&!state.caffOverride)banner.innerHTML=`<div style="background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.35);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:13px;color:#ef5350;font-weight:bold">⏰ 1pm cutoff passed</div><div style="font-size:10px;color:#9a4a48;margin-top:2px">No more caffeine — sleep & recovery protected 👍</div><button id="caff-override-btn" style="margin-top:8px;font-size:10px;color:#ef9090;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4);border-radius:7px;padding:5px 12px;cursor:pointer">⚠️ Override</button></div>`;
+  else if(pastCutRaw&&state.caffOverride)banner.innerHTML=`<div style="background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.4);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:12px;color:#fbbf24;font-weight:bold">⚠️ Override active</div><button id="caff-override-cancel" style="margin-top:6px;font-size:10px;color:#9a7a30;background:none;border:1px solid rgba(251,191,36,.3);border-radius:7px;padding:4px 10px;cursor:pointer">Cancel</button></div>`;
+  else if(minsLeft<=60)banner.innerHTML=`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:12px;color:#fbbf24">⚠️ Cutoff in ${minsLeft}m</div></div>`;
+  else banner.innerHTML=`<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.18);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:11px;color:#4ade80">✓ Cutoff at 1pm · ${Math.floor(minsLeft/60)}h ${minsLeft%60}m remaining</div></div>`;
+
+  document.getElementById('caff-total').innerHTML=`${totalMg}<span style="font-size:12px;color:#2a5a3a">mg</span>`;
+  document.getElementById('caff-total').style.color=over?'#ef5350':'#4ade80';
+  const csEl=document.getElementById('caff-servings');if(csEl)csEl.textContent=`${state.caffLog.length} serving${state.caffLog.length!==1?'s':''}`;
+  document.getElementById('caff-bar').style.width=Math.min((totalMg/400)*100,100)+'%';
+  document.getElementById('caff-bar').style.background=over?'#ef5350':'#4ade80';
+  const grid=document.getElementById('caff-grid');if(!grid)return;
+  grid.innerHTML='';
+  CAFF_SOURCES.forEach(src=>{
+    const b=document.createElement('button');
+    b.className='caff-src';b.disabled=pastCut;
+    b.style.cssText=`border:1px solid rgba(74,222,128,${pastCut?0.1:.35});background:rgba(74,222,128,${pastCut?0.03:.1});color:${pastCut?'#2a4a3a':'#4ade80'};cursor:${pastCut?'not-allowed':'pointer'}`;
+    b.innerHTML=`<span class="src-icon">${src.emoji}</span><span class="src-lbl">${src.label}</span><span class="src-mg" style="color:${pastCut?'#2a4a3a':'#2a6a4a'}">+${src.mg}mg</span>`;
+    b.onclick=()=>{if(pastCut)return;state.caffLog.push({sourceId:src.id,mg:src.mg,time:now().toTimeString().slice(0,5)});saveAll();renderCaff();};
+    grid.appendChild(b);
+  });
+  const logCard=document.getElementById('caff-log-card');
+  const logEntries=document.getElementById('caff-log-entries');
+  if(state.caffLog.length>0){
+    logCard.style.display='block';
+    logEntries.innerHTML=[...state.caffLog].reverse().map(e=>{
+      const src=CAFF_SOURCES.find(s=>s.id===e.sourceId);
+      return`<div class="log-entry"><span style="font-size:13px">${src?src.emoji:''} <span style="font-size:12px;color:#c0a0d0">${src?src.label:''}</span></span><div style="display:flex;gap:10px;align-items:center"><div style="font-size:12px;color:#4ade80;font-weight:bold">+${e.mg}mg</div><span style="font-size:10px;color:#4a3a6a">${e.time}</span></div></div>`;
+    }).join('');
+  } else logCard.style.display='none';
+}
+
+// ── Render Electrolytes ───────────────────────────────────────────────────────
+function renderElec(){
+  const s=getS();
+  const dt=DAY_TYPES.find(d=>d.id===s.dayTypeId)||DAY_TYPES[0];
+  document.getElementById('elec-note').textContent=`${dt.emoji} ${dt.note}`;
+  const scoops={seeking:s.seeking||0,salts:s.salts||0};
+  const targets={seeking:dt.seeking,salts:Math.max(dt.salts,1)};
+  const optional={seeking:false,salts:dt.salts===0};
+  const container=document.getElementById('elec-cards');
+  container.innerHTML='';
+  ELEC_PRODUCTS.forEach(ep=>{
+    const sv=scoops[ep.id],t=targets[ep.id],done=sv>=t,opt=optional[ep.id];
+    const mv=ep.mfn(sv);
+    const div=document.createElement('div');
+    div.className='card';
+    div.style.cssText='background:'+(done?'rgba('+ep.rgb+',.12)':'rgba('+ep.rgb+',.05)')+';border:1.5px solid rgba('+ep.rgb+','+(done?'0.5':'.22')+');margin-bottom:12px';
+    const mHTML=mv.some(v=>v>0)?('<div class="minerals">'+ep.minerals.map((m,i)=>'<div class="mineral"><div class="mineral-val" style="color:'+ep.color+'">'+mv[i]+'mg</div><div class="mineral-lbl">'+m+'</div></div>').join('')+'</div>'):'';
+    const segs=Array.from({length:t},(_,i)=>'<div class="progress-seg" style="background:'+(i<sv?ep.color:'rgba('+ep.rgb+',.12)')+'"></div>').join('');
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div class="card-title" style="color:${ep.color}">${ep.label}</div>
+          <div class="card-sub">${ep.sub}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:${ep.color}">${sv}/${t} serve${t!==1?'s':''}</div>
+          ${opt&&!done?'<div style="font-size:9px;color:#7a5a3a;margin-top:2px">optional today</div>':''}
+          ${done?'<div style="font-size:10px;color:#00e5a0;margin-top:1px">✓ Done!</div>':''}
+        </div>
+      </div>
+      <div class="progress-row">${segs}</div>
+      ${sv>0?mHTML:''}
+      <div class="add-row">
+        <button class="add-minus" style="border:1px solid rgba(${ep.rgb},.28);background:rgba(${ep.rgb},.07);color:${ep.color}" data-ep="${ep.id}" data-act="minus">−</button>
+        <button class="add-plus" style="border:1px solid rgba(${ep.rgb},.45);background:rgba(${ep.rgb},.16);color:${ep.color}" data-ep="${ep.id}" data-act="plus">+ Add Serve</button>
+      </div>
+      <div class="card-hint" style="color:rgba(${ep.rgb},.45)">${ep.hint}</div>`;
+    container.appendChild(div);
+  });
+  container.querySelectorAll('button[data-ep]').forEach(b=>{
+    b.onclick=()=>{
+      const id=b.dataset.ep,act=b.dataset.act;
+      if(act==='minus')state[id]=Math.max(0,state[id]-1);
+      else{state[id]++;if(id==='seeking'||id==='salts')state.water+=450;}
+      saveAll();try{renderElec();renderTotals();renderWater();}catch(err){console.error(err);}
+    };
+  });
+  renderTotals();
+}
+
+function renderTotals(){
+  const s=getS();
+  const dt=DAY_TYPES.find(d=>d.id===s.dayTypeId)||DAY_TYPES[0];
+  const suppK=(s.seeking*500)+(s.salts*200);
+  const suppNa=(s.seeking*150)+(s.salts*1014);
+  const suppMg=(s.seeking*125)+(s.salts*60)+(s.suppMag?200:0);
+  const tgtK=Math.max((dt.seeking*500)+(dt.salts*200),1);
+  const tgtNa=Math.max((dt.seeking*150)+(dt.salts*1014),1);
+  const tgtMg=Math.max((dt.seeking*125)+(dt.salts*60)+200,1);
+  const totals=[
+    {label:'Potassium',val:suppK,target:tgtK,color:'#a78bfa'},
+    {label:'Sodium',val:suppNa,target:tgtNa,color:'#fb923c'},
+    {label:'Magnesium',val:suppMg,target:tgtMg,color:'#34d399'},
+  ];
+  const g=document.getElementById('totals-grid');
+  g.innerHTML=totals.map(m=>{
+    const p=Math.min((m.val/m.target)*100,100);
+    return`<div class="total-item"><div class="total-lbl">${m.label}</div><div class="total-val" style="color:${p>=100?'#00e5a0':m.color}">${m.val}mg</div><div class="mini-bar"><div class="mini-fill" style="width:${p}%;background:${p>=100?'#00e5a0':m.color}"></div></div></div>`;
+  }).join('');
+}
+
+// ── Render Supps ──────────────────────────────────────────────────────────────
+function renderSupps(){
+  const s=getS();
+  const keys={omega:'suppOmega',vitd:'suppVitd',iron:'suppIron',folate:'suppFolate',mag:'suppMag'};
+  const done=Object.values(keys).filter(k=>s[k]).length;
+  const all=done===5;
+  document.getElementById('supp-title').textContent=all?'All done today! 🎉':'Daily Supplements';
+  document.getElementById('supp-count').innerHTML=`${done}<span style="font-size:13px;color:#5a3a7a">/5</span>`;
+  document.getElementById('supp-count').style.color=all?'#00e5a0':'#d946ef';
+  document.getElementById('supp-header').style.background=all?'rgba(217,70,239,.12)':'rgba(217,70,239,.06)';
+  document.getElementById('supp-header').style.borderColor=`rgba(217,70,239,${all?0.45:.2})`;
+  const prog=document.getElementById('supp-prog');
+  prog.innerHTML=Object.values(keys).map(k=>`<div class="prog-seg" style="background:${s[k]?(all?'#00e5a0':'#d946ef'):'rgba(217,70,239,.12)'}"></div>`).join('');
+  const cards=document.getElementById('supp-cards');
+  cards.innerHTML='';
+  let lastGroup='';
+  SUPPS.forEach(sup=>{
+    if(sup.group!==lastGroup){lastGroup=sup.group;const gh=document.createElement('div');gh.style.cssText='font-size:9px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.15em;margin:14px 0 6px;padding-left:2px';gh.textContent=sup.group;cards.appendChild(gh);}
+    const stateKey=keys[sup.id];const taken=!!state[stateKey];
+    const div=document.createElement('div');div.className='supp-card';
+    div.style.cssText='background:'+(taken?'rgba('+sup.color+',.12)':'rgba('+sup.color+',.04)')+';border:1.5px solid rgba('+sup.color+','+(taken?'0.45':'.18')+')';
+    div.innerHTML=`<div class="supp-inner"><div class="supp-info"><div class="supp-name-row"><span style="font-size:18px">${sup.emoji}</span><span style="font-size:13px;font-weight:bold;color:rgba(${sup.color},1)">${sup.label}</span></div><div class="supp-dose">${sup.dose}</div><div class="supp-sub">${sup.sub}</div></div><button class="supp-toggle" data-sid="${sup.id}" style="width:44px;height:44px;border-radius:12px;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid rgba(${sup.color},${taken?0.6:.3});background:${taken?'rgba('+sup.color+',.25)':'rgba('+sup.color+',.07)'};color:rgba(${sup.color},1);cursor:pointer">${taken?'✓':'○'}</button></div><div class="supp-tip" style="color:rgba(${sup.color},.4)">💡 ${sup.tip}</div>`;
+    cards.appendChild(div);
+  });
+  cards.querySelectorAll('.supp-toggle').forEach(b=>{
+    b.onclick=()=>{const sk=keys[b.dataset.sid];state[sk]=!state[sk];saveAll();renderSupps();renderTotals();};
+  });
+}
+
+// ── Render Sex ────────────────────────────────────────────────────────────────
+function renderSex(){
+  const container=document.getElementById('sex-cards');
+  if(!container)return;
+  container.innerHTML='';
+  const makeCard=(key,timeKey,label,emoji,color)=>{
+    const done=state[key],t=state[timeKey];
+    const div=document.createElement('div');
+    div.style.cssText=`background:rgba(${color},.05);border:1.5px solid rgba(${color},${done?0.4:.15});border-radius:16px;padding:16px;margin-bottom:12px`;
+    div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:15px;font-weight:bold;color:rgba(${color},1)">${emoji} ${label}</div><div style="font-size:10px;color:rgba(${color},.6);margin-top:3px">${done?'Logged today'+(t?' · '+t:''):'Not logged today'}</div></div><button data-sexkey="${key}" data-sextkey="${timeKey}" style="width:44px;height:44px;border-radius:12px;font-size:20px;border:1.5px solid rgba(${color},${done?0.6:.3});background:${done?'rgba('+color+',.25)':'rgba('+color+',.07)'};color:rgba(${color},1);cursor:pointer">${done?'✓':'○'}</button></div>${done?('<div style="margin-top:12px"><div style="font-size:10px;color:rgba('+color+',.5);margin-bottom:6px">Time</div><input data-sextinput="'+timeKey+'" type="time" value="'+(t||'')+'" style="background:rgba('+color+',.08);border:1px solid rgba('+color+',.25);border-radius:8px;padding:7px 10px;color:#f0e8f4;font-size:15px;width:100%;-webkit-appearance:none"/></div>'):''}`;
+    container.appendChild(div);
+  };
+  makeCard('sexActivity','sexActivityTime','Sexual Activity','❤️‍🔥','239,68,68');
+  makeCard('sexMasturbation','sexMasturbationTime','Self pleasure','💆','217,70,239');
+  const note=document.createElement('div');
+  note.style.cssText='font-size:10px;color:#3a2a4a;text-align:center;padding:12px;line-height:1.5';
+  note.textContent='Tracked for health journalling · resets daily at midnight';
+  container.appendChild(note);
+  container.querySelectorAll('button[data-sexkey]').forEach(b=>{
+    b.onclick=()=>{const k=b.dataset.sexkey;const tk=b.dataset.sextkey;state[k]=!state[k];if(state[k])state[tk]=now().toTimeString().slice(0,5);else state[tk]='';saveAll();renderSex();};
+  });
+  container.querySelectorAll('input[data-sextinput]').forEach(inp=>{
+    inp.onchange=()=>{state[inp.dataset.sextinput]=inp.value;saveAll();};
+  });
+}
+
+// ── Period Phase Helper ───────────────────────────────────────────────────────
+function getPeriodPhase(){
+  if(!state.periodLastStart)return null;
+  const start=new Date(state.periodLastStart);
+  const todayD=new Date();todayD.setHours(0,0,0,0);
+  const cycleDay=Math.floor((todayD-start)/86400000)+1;
+  if(cycleDay<1)return null;
+  const cl=state.periodCycleLength||28;
+  const dayInCycle=((cycleDay-1)%cl)+1;
+  if(dayInCycle<=5)return{id:'menstrual',phase:'Menstrual',day:dayInCycle,color:'#fb7185',bgColor:'251,113,133',desc:'Period phase · rest & restore'};
+  if(dayInCycle<=13)return{id:'follicular',phase:'Follicular',day:dayInCycle,color:'#4ade80',bgColor:'74,222,128',desc:'Energy rising · great for training'};
+  if(dayInCycle<=16)return{id:'ovulation',phase:'Ovulation',day:dayInCycle,color:'#fbbf24',bgColor:'251,191,36',desc:'Peak energy · peak performance'};
+  return{id:'luteal',phase:'Luteal',day:dayInCycle,color:'#c084fc',bgColor:'192,132,252',desc:'Wind-down phase · prioritise sleep'};
+}
+
+// ── Render Period ─────────────────────────────────────────────────────────────
+function renderPeriod(){
+  const container=document.getElementById('period-cards');
+  if(!container)return;
+  container.innerHTML='';
+  const phase=getPeriodPhase();
+  const cl=state.periodCycleLength||28;
+  const symptoms=state.periodSymptoms||[];
+
+  // Phase card
+  const phaseCard=document.createElement('div');
+  if(phase){
+    const nextPeriodDate=new Date(state.periodLastStart);
+    nextPeriodDate.setDate(nextPeriodDate.getDate()+cl);
+    const daysToNext=Math.ceil((nextPeriodDate-new Date())/86400000);
+    const segWidth=Math.min(((phase.day-1)/cl)*100,100);
+    phaseCard.style.cssText=`background:rgba(${phase.bgColor},.08);border:1.5px solid rgba(${phase.bgColor},.35);border-radius:16px;padding:16px;margin-bottom:12px`;
+    phaseCard.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+        <div>
+          <div style="font-size:11px;color:rgba(${phase.bgColor},.7);text-transform:uppercase;letter-spacing:.15em;margin-bottom:4px">Current Phase</div>
+          <div style="font-size:22px;font-weight:bold;color:${phase.color}">${phase.phase}</div>
+          <div style="font-size:11px;color:rgba(${phase.bgColor},.7);margin-top:2px">${phase.desc}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:26px;font-weight:bold;color:${phase.color}">Day ${phase.day}</div>
+          <div style="font-size:9px;color:rgba(${phase.bgColor},.5)">of ${cl}-day cycle</div>
+        </div>
+      </div>
+      <div style="height:8px;background:rgba(${phase.bgColor},.1);border-radius:4px;margin-bottom:8px;position:relative">
+        <div style="height:100%;width:${segWidth}%;background:${phase.color};border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(${phase.bgColor},.4);margin-bottom:4px">
+        <span>Menstrual</span><span>Follicular</span><span>Ovulation</span><span>Luteal</span>
+      </div>
+      <div style="font-size:10px;color:rgba(${phase.bgColor},.5);text-align:center;margin-top:8px">
+        ${daysToNext>0?`Next period predicted in ${daysToNext} day${daysToNext!==1?'s':''}`:daysToNext===0?'Period may start today':'Period may have started'}
+      </div>`;
+  } else {
+    phaseCard.style.cssText='background:rgba(251,113,133,.06);border:1.5px solid rgba(251,113,133,.2);border-radius:16px;padding:16px;margin-bottom:12px;text-align:center';
+    phaseCard.innerHTML='<div style="font-size:14px;font-weight:bold;color:#fb7185;margin-bottom:6px">🌸 Period Tracker</div><div style="font-size:12px;color:#6a3a5a">Tap "Period Started" below to begin tracking your cycle</div>';
+  }
+  container.appendChild(phaseCard);
+
+  // Period log buttons
+  const logCard=document.createElement('div');
+  logCard.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  const periodActive=state.periodLastStart&&!state.periodLastEnd;
+  logCard.innerHTML=`
+    <div style="font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">Log Period</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <button id="period-start-btn" style="padding:11px;border-radius:11px;font-size:12px;font-weight:bold;border:1.5px solid rgba(251,113,133,${periodActive?0.2:.5});background:rgba(251,113,133,${periodActive?0.04:.18});color:${periodActive?'#6a3a5a':'#fb7185'};cursor:pointer">🩸 Period Started</button>
+      <button id="period-end-btn" style="padding:11px;border-radius:11px;font-size:12px;font-weight:bold;border:1.5px solid rgba(52,211,153,${!periodActive?0.2:.5});background:rgba(52,211,153,${!periodActive?0.04:.18});color:${!periodActive?'#2a5a4a':'#34d399'};cursor:pointer">✓ Period Ended</button>
+    </div>
+    ${state.periodLastStart?`<div style="font-size:10px;color:#4a3a5a;text-align:center">Last start: ${new Date(state.periodLastStart).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}${state.periodLastEnd?' · ended: '+new Date(state.periodLastEnd).toLocaleDateString('en-AU',{day:'numeric',month:'short'}):' · ongoing'}</div>`:''}
+    <div style="margin-top:12px">
+      <div style="font-size:10px;color:#6a4a8a;margin-bottom:6px">Cycle length (days)</div>
+      <input id="cycle-length-input" type="number" min="21" max="40" value="${cl}" style="width:100%;background:rgba(217,70,239,.08);border:1.5px solid rgba(217,70,239,.3);border-radius:10px;padding:8px 12px;color:#f0e8f4;font-size:15px;font-family:Georgia,serif;-webkit-appearance:none"/>
+    </div>`;
+  container.appendChild(logCard);
+
+  // Symptoms
+  const symCard=document.createElement('div');
+  symCard.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  symCard.innerHTML=`<div style="font-size:10px;color:#6a4a8a;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">Today's Symptoms</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${PERIOD_SYMPTOMS.map(sym=>{
+        const active=symptoms.includes(sym.id);
+        return`<button data-sym="${sym.id}" style="padding:10px 8px;border-radius:10px;font-size:12px;border:1.5px solid rgba(251,113,133,${active?0.5:.2});background:rgba(251,113,133,${active?0.18:.04});color:${active?'#fb7185':'#6a4a5a'};cursor:pointer;display:flex;align-items:center;gap:6px"><span>${sym.emoji}</span><span style="font-size:11px">${sym.label}</span></button>`;
+      }).join('')}
+    </div>`;
+  container.appendChild(symCard);
+
+  // Cycle insight
+  const insightCard=document.createElement('div');
+  insightCard.style.cssText='background:rgba(251,113,133,.04);border:1px solid rgba(251,113,133,.15);border-radius:12px;padding:12px 14px';
+  insightCard.innerHTML=`<div style="font-size:11px;font-weight:bold;color:#fb7185;margin-bottom:8px">🌸 Cycle-aware health</div>
+    <div style="font-size:10px;color:#6a3a5a;line-height:1.7">
+      <div style="margin-bottom:4px">🏋️ <span style="color:#c0a0d0">Follicular & Ovulation:</span> Peak strength — push hard in training</div>
+      <div style="margin-bottom:4px">🧘 <span style="color:#c0a0d0">Luteal:</span> Increase magnesium & B6 — reduces PMS symptoms</div>
+      <div style="margin-bottom:4px">☕ <span style="color:#c0a0d0">Pre-period:</span> Caffeine sensitivity rises — consider reducing</div>
+      <div>💧 <span style="color:#c0a0d0">During period:</span> Increase iron-rich foods, stay hydrated</div>
+    </div>`;
+  container.appendChild(insightCard);
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+function saveSnapshot(){
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
+  const snap={
+    date:today,
+    dateLabel:new Date().toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}),
+    water:state.water,waterTarget:dt.target+(state.sessionDrinks*250),dayType:dt.label,dayTypeId:state.dayTypeId,
+    sessionDrinks:state.sessionDrinks,weekDrinks:state.weekDrinks,
+    cigs:state.cigs,lastSmokeTime:state.lastSmokeTime,
+    caffMg:state.caffLog.reduce((a,e)=>a+e.mg,0),
+    supps:[state.suppOmega,state.suppVitd,state.suppIron,state.suppFolate,state.suppMag].filter(Boolean).length,
+    weight:state.weight,
+    periodSymptoms:state.periodSymptoms,
+    seeking:state.seeking,salts:state.salts,
+    suppK:(state.seeking*500)+(state.salts*200),
+    suppNa:(state.seeking*150)+(state.salts*1014),
+    suppMg:(state.seeking*125)+(state.salts*60)+(state.suppMag?200:0),
+  };
+  try{localStorage.setItem('snap_'+today,JSON.stringify(snap));}catch{}
+}
+
+function renderHistory(){
+  const list=document.getElementById('history-list');
+  const entries=[];
+  for(let i=0;i<30;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=d.toDateString();
+    if(key===today){
+      const dt=DAY_TYPES.find(x=>x.id===state.dayTypeId)||DAY_TYPES[0];
+      entries.push({dateLabel:'Today',isToday:true,date:today,
+        water:state.water,waterTarget:dt.target+(state.sessionDrinks*250),dayType:dt.label,
+        drinks:state.sessionDrinks,cigs:state.cigs,
+        caffMg:state.caffLog.reduce((a,e)=>a+e.mg,0),
+        supps:[state.suppOmega,state.suppVitd,state.suppIron,state.suppFolate,state.suppMag].filter(Boolean).length,
+        weight:state.weight,periodSymptoms:state.periodSymptoms||[],
+      });
+    } else {
+      try{const v=localStorage.getItem('snap_'+key);if(v)entries.push({...JSON.parse(v),isToday:false});}catch{}
+    }
+  }
+  if(!entries.length){list.innerHTML='<div style="text-align:center;color:#3a2a4a;padding:30px;font-size:13px">No history yet — check back tomorrow!</div>';return;}
+  list.innerHTML=entries.map(e=>{
+    const wpct=Math.min(Math.round((e.water/(e.waterTarget||2500))*100),100);
+    const wcolor=wpct>=100?'#00e5a0':wpct>=60?'#d946ef':wpct>=30?'#ffd54f':'#ef5350';
+    const isViewing=viewState&&viewState.date===e.date;
+    const clickable=!e.isToday;
+    return`<div ${clickable?'data-snapdate="'+e.date+'"':''} style="background:${isViewing?'rgba(251,191,36,.07)':e.isToday?'rgba(255,255,255,.03)':'rgba(255,255,255,.02)'};border:1px solid ${isViewing?'rgba(251,191,36,.45)':e.isToday?'rgba(217,70,239,.3)':'rgba(255,255,255,.07)'};border-radius:14px;padding:14px;margin-bottom:10px;${clickable?'cursor:pointer':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><div style="font-size:14px;font-weight:bold;color:${isViewing?'#fbbf24':e.isToday?'#d946ef':'#f0e8f4'}">${e.isToday?'Today (live)':e.dateLabel}</div><div style="font-size:10px;color:#6a4a8a;margin-top:1px">${e.dayType}</div></div>
+        <div style="font-size:11px;font-weight:bold;color:${wcolor}">${wpct}% hydrated</div>
+      </div>
+      <div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:10px"><div style="height:100%;width:${wpct}%;background:${wcolor};border-radius:2px"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;text-align:center">
+        <div><div style="font-size:12px;font-weight:bold;color:#d946ef">${fml(e.water||0)}</div><div style="font-size:8px;color:#3a2a5a;text-transform:uppercase;margin-top:1px">Water</div></div>
+        <div><div style="font-size:12px;font-weight:bold;color:#f472b6">${fmt05(e.drinks||0)}</div><div style="font-size:8px;color:#3a2a5a;text-transform:uppercase;margin-top:1px">Drinks</div></div>
+        <div><div style="font-size:12px;font-weight:bold;color:#fb923c">${fmt05(e.cigs||0)}</div><div style="font-size:8px;color:#3a2a5a;text-transform:uppercase;margin-top:1px">Smokes</div></div>
+        <div><div style="font-size:12px;font-weight:bold;color:#4ade80">${e.caffMg||0}mg</div><div style="font-size:8px;color:#3a2a5a;text-transform:uppercase;margin-top:1px">Caff</div></div>
+        <div><div style="font-size:12px;font-weight:bold;color:#c084fc">${e.supps||0}/5</div><div style="font-size:8px;color:#3a2a5a;text-transform:uppercase;margin-top:1px">Supps</div></div>
+      </div>
+      ${e.weight?`<div style="font-size:10px;color:#6a4a8a;margin-top:6px;text-align:center">⚖️ ${e.weight}kg</div>`:''}
+      ${(e.periodSymptoms||[]).length>0?`<div style="font-size:9px;color:#fb7185;margin-top:4px;text-align:center">🌸 ${(e.periodSymptoms).map(s=>PERIOD_SYMPTOMS.find(x=>x.id===s)?.emoji||'').join('')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── Share ─────────────────────────────────────────────────────────────────────
+function buildShareText(){
+  const src=viewState||state;
+  const dt=DAY_TYPES.find(d=>d.id===(src.dayTypeId||state.dayTypeId))||DAY_TYPES[0];
+  const target=dt.target+(src.sessionDrinks*250);
+  const pct=Math.round(((src.water||0)/target)*100);
+  const caffMg=(src.caffLog||state.caffLog).reduce((a,e)=>a+e.mg,0);
+  const suppsDone=[src.suppOmega,src.suppVitd,src.suppIron,src.suppFolate,src.suppMag].filter(Boolean).length;
+  const dateStr=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+  const phase=getPeriodPhase();
+  return[
+    `💜 Health Log — ${dateStr}`,`🏷️ ${dt.label}`,``,
+    `━━━ 🚬 SMOKES ━━━`,`  Today: ${fmt05(src.cigs||0)} cigarettes`,`  Goal: ${fmt05(CIG_PLAN[getAppWeek(state.cigStartDate)])} · Week ${getAppWeek(state.cigStartDate)+1} of quit plan`,``,
+    `━━━ 🍷 DRINKS ━━━`,`  Today: ${fmt05(src.sessionDrinks||0)} std · Week: ${fmt05(src.weekDrinks||0)}/10`,``,
+    `━━━ 💧 HYDRATION ━━━`,`  ${pct}% (${fml(src.water||0)} / ${fml(target)})`,``,
+    `━━━ ☕ CAFFEINE ━━━`,`  ${caffMg}mg`,``,
+    `━━━ 💊 SUPPS ━━━`,`  ${suppsDone}/5 done`,``,
+    `━━━ 🌸 PERIOD ━━━`,
+    phase?`  Phase: ${phase.phase} · Day ${phase.day} of cycle`:`  No cycle data logged`,
+    (src.periodSymptoms||[]).length>0?`  Symptoms: ${(src.periodSymptoms).map(s=>PERIOD_SYMPTOMS.find(x=>x.id===s)?.label||s).join(', ')}`:`  No symptoms today`,
+    ``,`━━━ ⚖️ WEIGHT ━━━`,`  ${src.weight?src.weight+'kg':'not logged'}`,
+  ].join('\n');
+}
+
+// ── View Mode ─────────────────────────────────────────────────────────────────
+function enterViewMode(snap){
+  viewState=snap;
+  document.getElementById('app').style.opacity='0.93';
+  const b=document.getElementById('view-banner');const l=document.getElementById('view-label');
+  if(b)b.style.display='flex';
+  if(l)l.textContent='📅 Viewing: '+snap.dateLabel+(snap.dayType?' — '+snap.dayType:'');
+  render();renderHistory();
+}
+function exitViewMode(){
+  viewState=null;
+  document.getElementById('app').style.opacity='1';
+  const b=document.getElementById('view-banner');if(b)b.style.display='none';
+  render();
+}
+document.addEventListener('click',function(e){
+  if(e.target.id==='view-exit'){exitViewMode();return;}
+  const card=e.target.closest('[data-snapdate]');
+  if(card){
+    try{
+      const v=localStorage.getItem('snap_'+card.dataset.snapdate);
+      if(v){
+        enterViewMode(JSON.parse(v));
+        TABS.forEach(x=>{
+          document.getElementById('tab-'+x.id).className='tab'+(x.id==='smokes'?' active':'');
+          const p=document.getElementById('panel-'+x.id);
+          if(p){p.className='panel'+(x.id==='smokes'?' active':'');p.style.display=x.id==='smokes'?'block':'none';}
+        });
+      }
+    }catch(err){console.error(err);}
+  }
+});
+
+// ── Main Render ───────────────────────────────────────────────────────────────
+function render(){
+  const fns=[renderSmokes,renderDrinks,renderWeight,renderWater,renderExercise,renderCaff,renderElec,renderSupps,renderSex,renderPeriod,saveSnapshot];
+  fns.forEach(fn=>{try{fn();}catch(err){console.error(fn.name+' FAILED:',err.message||err);}});
+}
+render();
+setInterval(()=>{if(!viewState){renderDrinks();renderCaff();}},60000);
+</script>
+
+</body>
+</html>

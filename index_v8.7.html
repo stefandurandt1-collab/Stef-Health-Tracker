@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Health Tracker v8.7</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Health Tracker"/>
+<meta name="theme-color" content="#0a1628"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230a1628'/%3E%3Ctext y='340' x='256' text-anchor='middle' font-size='300'%3E%F0%9F%92%A7%3C/text%3E%3C/svg%3E"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#0a1628;font-family:Georgia,'Times New Roman',serif;color:#e0f0ff;min-height:100vh;overscroll-behavior:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+button:active{transform:scale(0.93)}
+#app{display:flex;flex-direction:column;align-items:center;padding:20px 14px 60px;min-height:100vh;min-height:100dvh;background:linear-gradient(160deg,#0a1628 0%,#0d2137 55%,#091a2e 100%)}
+.header{text-align:center;margin-bottom:14px}
+.header-sub{font-size:9px;letter-spacing:.35em;color:#4fc3f7;text-transform:uppercase;margin-bottom:2px}
+.header-title{font-size:24px;font-weight:bold;letter-spacing:-.5px}
+.header-date{font-size:11px;color:#6ea8d0;margin-top:2px}
+.day-selector{margin-bottom:14px;width:100%;max-width:340px;position:relative}
+.day-btn{width:100%;background:rgba(79,195,247,.08);border:1.5px solid rgba(79,195,247,.28);border-radius:12px;padding:10px 14px;color:#e0f0ff;font-size:13px;display:flex;align-items:center;justify-content:space-between}
+.day-btn span.chg{color:#4fc3f7;font-size:11px}
+.day-dropdown{display:none;position:absolute;top:calc(100% + 5px);left:0;right:0;background:rgba(9,26,46,.98);border:1.5px solid rgba(79,195,247,.22);border-radius:12px;overflow:hidden;z-index:20}
+.day-dropdown.open{display:block}
+.day-option{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.04);padding:10px 14px;color:#b0d0e8;font-size:13px;display:flex;justify-content:space-between;text-align:left}
+.day-option.active{background:rgba(79,195,247,.13);color:#4fc3f7}
+.day-option span.ml{color:#4a7a9b;font-size:11px}
+.tabs{display:flex;background:rgba(255,255,255,.04);border-radius:14px;padding:3px;margin-bottom:18px;width:100%;overflow-x:auto;gap:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tab{flex:1;padding:7px 0;border-radius:11px;color:#3a6a8a;font-size:9px;display:flex;flex-direction:column;align-items:center;gap:1px;transition:all .2s}
+.tab.active{background:rgba(79,195,247,.18);color:#4fc3f7;font-weight:bold}
+.tab-icon{font-size:14px}
+.panel{width:100%;max-width:340px;display:none}
+.panel.active{display:block}
+.water-circle{position:relative;margin-bottom:16px;display:flex;justify-content:center}
+.tap-btn{width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(79,195,247,.32),rgba(0,100,180,.18));border:2.5px solid rgba(79,195,247,.48);color:#e0f0ff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 36px rgba(79,195,247,.18);margin-bottom:18px;margin-left:auto;margin-right:auto}
+.tap-btn .icon{font-size:38px}
+.tap-btn .amount{font-size:19px;font-weight:bold;margin-top:3px}
+.tap-btn .hint{font-size:10px;color:#6ea8d0;margin-top:1px}
+.status-pill{border-radius:10px;padding:6px 18px;margin-bottom:16px;font-size:13px;text-align:center}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px;text-align:center}
+.stat-val{font-size:16px;font-weight:bold}
+.stat-lbl{font-size:10px;color:#4a7a9b;margin-top:2px;text-transform:uppercase;letter-spacing:.1em}
+.row{display:flex;gap:10px;width:100%}
+.undo-btn{flex:1;background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.28);border-radius:12px;padding:11px;color:#ef9090;font-size:13px}
+.undo-btn:disabled{color:#3a5a6b;cursor:not-allowed}
+.reset-btn{background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px;color:#4a7a9b;font-size:12px}
+.card{border-radius:16px;padding:16px;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:bold}
+.card-sub{font-size:10px;color:#7a6a8a;margin-top:1px}
+.progress-row{display:flex;gap:6px;margin:10px 0}
+.progress-seg{flex:1;height:7px;border-radius:4px;transition:background .3s}
+.minerals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.mineral{background:rgba(0,0,0,.2);border-radius:8px;padding:7px 4px;text-align:center}
+.mineral-val{font-size:12px;font-weight:bold}
+.mineral-lbl{font-size:9px;color:#6a4a8a;margin-top:1px;text-transform:uppercase;letter-spacing:.04em}
+.add-row{display:flex;gap:8px}
+.add-minus{flex:1;padding:9px;border-radius:10px;font-size:20px}
+.add-plus{flex:2;padding:9px;border-radius:10px;font-size:13px;font-weight:bold}
+.card-hint{font-size:9px;margin-top:7px;text-align:center}
+.totals-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px}
+.totals-title{font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:9px}
+.totals-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.total-item{text-align:center}
+.total-lbl{font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.total-val{font-size:13px;font-weight:bold}
+.mini-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:4px}
+.mini-fill{height:100%;border-radius:2px;transition:width .4s}
+.warning-banner{border-radius:12px;padding:10px 14px;margin-bottom:14px;text-align:center}
+.drink-dots{display:flex;gap:8px;margin-bottom:14px}
+.drink-dot{flex:1;height:10px;border-radius:5px;transition:background .3s}
+.warn-msg{border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#ef9090;text-align:center;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4)}
+.drink-btns{display:flex;gap:8px}
+.drink-minus{padding:11px 13px;border-radius:11px;border:1px solid rgba(244,114,182,.28);background:rgba(244,114,182,.07);color:#f472b6;font-size:22px}
+.drink-1{flex:1;padding:11px 6px;border-radius:11px;font-size:12px;font-weight:bold}
+.drink-15{flex:1;padding:11px 6px;border-radius:11px;font-size:12px;font-weight:bold}
+.week-bar-wrap{height:8px;background:rgba(244,114,182,.1);border-radius:4px}
+.week-bar{height:100%;border-radius:4px;transition:width .4s}
+.cig-roadmap{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cig-cell{text-align:center}
+.cig-box{width:100%;aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.cig-wlbl{font-size:7px;margin-top:2px}
+.caff-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.caff-src{padding:11px 8px;border-radius:11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.caff-src .src-icon{font-size:20px}
+.caff-src .src-lbl{font-size:11px;font-weight:bold}
+.caff-src .src-mg{font-size:10px}
+.log-entry{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(255,255,255,.03);border-radius:9px}
+.supp-card{border-radius:14px;padding:14px;margin-bottom:10px;transition:all .25s}
+.supp-inner{display:flex;justify-content:space-between;align-items:flex-start}
+.supp-info{flex:1}
+.supp-name-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.supp-dose{font-size:11px;color:#b0d0e8;margin-bottom:2px}
+.supp-sub{font-size:10px;color:#4a6a7a}
+.supp-toggle{width:44px;height:44px;border-radius:12px;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mag-btns{display:flex;gap:8px;margin-top:10px}
+.mag-btn{flex:1;padding:9px 6px;border-radius:10px;font-size:12px;font-weight:bold}
+.supp-tip{font-size:9px;margin-top:8px}
+.prog-bar-wrap{display:flex;gap:6px;margin-bottom:18px}
+.prog-seg{flex:1;height:6px;border-radius:3px;transition:background .3s}
+.info-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 14px;font-size:10px;color:#4a6a5a;line-height:1.6}
+.footer{margin-top:22px;font-size:9px;color:#1a3040;text-align:center;max-width:300px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.panel.active{animation:fadeIn .2s ease}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-sub">Daily Protocol</div>
+    <div class="header-title">Health Tracker v8.7</div>
+    <div class="header-date" id="hdr-date"></div>
+  </div>
+  <div style="text-align:center;margin-bottom:8px">
+    <button id="history-toggle-btn" style="font-size:11px;font-weight:bold;color:#4a7a9b;background:rgba(74,122,155,.1);border:1px solid rgba(74,122,155,.25);border-radius:8px;padding:5px 16px;cursor:pointer">📅 History</button>
+  </div>
+  <div id="view-banner" style="display:none;background:rgba(251,191,36,.12);border:1.5px solid rgba(251,191,36,.45);border-radius:12px;padding:9px 14px;margin-bottom:10px;justify-content:space-between;align-items:center">
+    <div style="font-size:12px;color:#fbbf24;font-weight:bold" id="view-label">📅 Viewing past day</div>
+    <button id="view-exit" style="font-size:11px;font-weight:bold;color:#fbbf24;background:rgba(251,191,36,.2);border:1px solid rgba(251,191,36,.4);border-radius:7px;padding:5px 10px;cursor:pointer">← Back to Today</button>
+  </div>
+  <div class="day-selector">
+    <button class="day-btn" id="day-btn">
+      <span id="day-label">😴 Rest Day</span>
+      <span class="chg">▼ change</span>
+    </button>
+    <div class="day-dropdown" id="day-dropdown"></div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="panel active" id="panel-body"><div id="body-cards"></div></div>
+  <div class="panel" id="panel-water">
+    <div class="water-circle">
+      <svg id="water-svg" width="185" height="185" viewBox="0 0 200 200">
+        <defs>
+          <clipPath id="cc"><circle cx="100" cy="100" r="88"/></clipPath>
+          <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+            <stop id="wg-stop1" offset="0%" stop-opacity="0.9"/>
+            <stop id="wg-stop2" offset="100%" stop-opacity="0.5"/>
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="100" r="94" fill="none" stroke="rgba(79,195,247,0.12)" stroke-width="2"/>
+        <circle cx="100" cy="100" r="88" fill="rgba(5,20,40,0.65)"/>
+        <g clip-path="url(#cc)">
+          <rect id="wave-rect" x="0" width="200" height="200"/>
+          <path id="wave-path" opacity="0.25"/>
+        </g>
+        <circle id="arc" cx="100" cy="100" r="88" fill="none" stroke-width="3" stroke-dasharray="0 553" stroke-linecap="round" transform="rotate(-90 100 100)" style="transition:stroke-dasharray .5s ease,stroke .5s ease"/>
+        <text id="svg-intake" x="100" y="87" text-anchor="middle" fill="#e0f0ff" font-size="29" font-weight="bold" font-family="Georgia,serif"></text>
+        <text id="svg-target" x="100" y="106" text-anchor="middle" fill="#6ea8d0" font-size="11" font-family="Georgia,serif"></text>
+        <text id="svg-pct" x="100" y="128" text-anchor="middle" font-size="16" font-weight="bold" font-family="Georgia,serif"></text>
+      </svg>
+    </div>
+    <div class="status-pill" id="status-pill"></div>
+    <button class="tap-btn" id="tap-water" style="display:flex">
+      <span class="icon">💧</span>
+      <span class="amount">+450ml</span>
+      <span class="hint">tap to log</span>
+    </button>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-remaining"></div><div class="stat-lbl">Remaining</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-cups"></div><div class="stat-lbl">Cups left</div></div>
+    </div>
+    <div class="row">
+      <button class="undo-btn" id="undo-water">← Undo 450ml</button>
+      <button class="reset-btn" id="reset-btn">Reset</button>
+    </div>
+    <div class="footer" style="margin-top:14px">Pale yellow = hydrated · Dark yellow = drink now · Clear = over-hydrated</div>
+  </div>
+  <div class="panel" id="panel-electrolytes">
+    <div style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic" id="elec-note"></div>
+    <div id="elec-cards"></div>
+    <div class="totals-card">
+      <div class="totals-title">Supplement Totals</div>
+      <div class="totals-grid" id="totals-grid"></div>
+      <div id="na-total-note" style="font-size:9px;margin-top:8px;text-align:center;line-height:1.5"></div>
+      <div style="font-size:9px;color:#1e3a4a;margin-top:6px;text-align:center">Targets show supplement contribution only · food adds ~2,200mg Na, ~3,500mg K, ~320mg Mg</div>
+    </div>
+  </div>
+  <div class="panel" id="panel-drinks">
+    <div id="drink-cutoff-banner"></div>
+    <div class="card" id="session-card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div class="card-title" style="color:#f472b6">Tonight's Session</div><div class="card-sub">Max 4 std drinks · stops at 8pm</div></div>
+        <div style="text-align:right"><div style="font-size:22px;font-weight:bold" id="session-count">0</div><div style="font-size:10px;color:#7a4a6a">/ 4</div></div>
+      </div>
+      <div class="drink-dots" id="drink-dots"></div>
+      <div id="drink-warning" style="display:none" class="warn-msg"></div>
+      <div class="drink-btns">
+        <button class="drink-minus" id="drink-minus">−</button>
+        <button class="drink-1" id="drink-1">+ 1 std<br/><span style="font-size:10px;font-weight:normal">+250ml 💧</span></button>
+        <button class="drink-15" id="drink-15">+ 1.5 std<br/><span style="font-size:10px;font-weight:normal">+375ml 💧</span></button>
+      </div>
+      <div style="font-size:9px;color:#6a3a58;margin-top:7px;text-align:center">Water auto-logs with each drink</div>
+    </div>
+    <div class="card" id="week-card" style="padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><div style="font-size:13px;font-weight:bold;color:#f472b6">This Week</div><div style="font-size:10px;color:#7a4a6a;margin-top:1px">Weekly limit: 10 std drinks</div></div>
+        <div style="font-size:20px;font-weight:bold;color:#f472b6" id="week-count">0 <span style="font-size:12px;color:#7a4a6a">/ 10</span></div>
+      </div>
+      <div class="week-bar-wrap"><div class="week-bar" id="week-bar" style="width:0%;background:#f472b6"></div></div>
+      <div style="font-size:10px;color:#5a3a5a;margin-top:8px;text-align:center" id="week-remaining">10 drinks remaining this week</div>
+    </div>
+    <div class="card" style="background:rgba(52,211,153,.05);border:1.5px solid rgba(52,211,153,.2);padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div style="font-size:14px;font-weight:bold;color:#34d399">🌿 Cannabis</div><div style="font-size:10px;color:#1a4a3a;margin-top:1px">Medical · prescribed</div></div>
+        <div style="font-size:9px;color:#1a4a3a" id="mj-time"></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;color:#2a6a5a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">🍬 Edible (10:10:10 THC:CBD:CBG)</div>
+        <div style="font-size:11px;color:#1a4a3a;margin-bottom:7px"><span id="mj-edible-count" style="color:#34d399;font-weight:bold">0</span> instances · <span id="mj-edible-fraction" style="color:#34d399">0</span> gummy</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+          <button data-mje="1" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);color:#34d399;cursor:pointer">+¼</button>
+          <button data-mje="2" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);color:#34d399;cursor:pointer">+½</button>
+          <button data-mje="4" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);color:#34d399;cursor:pointer">+whole</button>
+          <button data-mje="-1" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(239,83,80,.28);background:rgba(239,83,80,.07);color:#ef9090;cursor:pointer">−¼</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#2a6a5a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">💨 Vaporizer (22-23% THC)</div>
+        <div style="font-size:11px;color:#1a4a3a;margin-bottom:7px"><span id="mj-vape-count" style="color:#34d399;font-weight:bold">0</span> puffs</div>
+        <div style="display:flex;gap:8px">
+          <button id="mj-vape-minus" style="padding:9px 14px;border-radius:9px;font-size:20px;border:1px solid rgba(52,211,153,.28);background:rgba(52,211,153,.07);color:#34d399;cursor:pointer">−</button>
+          <button id="mj-vape-1" style="flex:1;padding:9px;border-radius:9px;font-size:12px;font-weight:bold;border:1px solid rgba(52,211,153,.45);background:rgba(52,211,153,.18);color:#34d399;cursor:pointer">+1 puff</button>
+          <button id="mj-vape-2" style="flex:1;padding:9px;border-radius:9px;font-size:12px;font-weight:bold;border:1px solid rgba(52,211,153,.45);background:rgba(52,211,153,.18);color:#34d399;cursor:pointer">+2 puffs</button>
+        </div>
+      </div>
+    </div>
+    <div class="info-card"><div style="color:#6ea8d0;font-weight:bold;margin-bottom:4px">Recovery rules 🧠</div>Alcohol is your #1 recovery killer (-18% Whoop score). Front-load hydration before and during — not just after.</div>
+  </div>
+  <div class="panel" id="panel-smokes">
+    <div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.22);border-radius:14px;padding:14px 16px;margin-bottom:14px;text-align:center">
+      <div style="font-size:10px;color:#a07820;text-transform:uppercase;letter-spacing:.15em;margin-bottom:3px" id="cig-week-lbl"></div>
+      <div id="cig-goal-display"></div>
+    </div>
+    <div class="card" id="cig-card" style="margin-bottom:12px;padding:18px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div class="card-title" id="cig-title" style="color:#fbbf24"></div><div class="card-sub" id="cig-subtitle"></div></div>
+        <div style="text-align:right"><div style="font-size:28px;font-weight:bold;color:#fbbf24" id="cig-count">0</div><div style="font-size:10px;color:#7a6a30" id="cig-target-lbl"></div></div>
+      </div>
+      <div id="cig-bar-wrap" style="margin-bottom:14px"><div style="height:8px;background:rgba(251,191,36,.1);border-radius:4px"><div id="cig-bar" style="height:100%;border-radius:4px;transition:width .4s;background:#fbbf24;width:0%"></div></div><div id="cig-over-lbl" style="display:none;font-size:10px;color:#ef7070;margin-top:4px;text-align:center"></div></div>
+      <div style="display:flex;gap:10px">
+        <button id="cig-minus" style="flex:1;padding:11px;border-radius:11px;border:1px solid rgba(251,191,36,.28);background:rgba(251,191,36,.06);color:#fbbf24;font-size:22px">−</button>
+        <button id="cig-plus" style="flex:2;padding:11px;border-radius:11px;border:1px solid rgba(251,191,36,.45);background:rgba(251,191,36,.15);color:#fbbf24;font-size:13px;font-weight:bold">🚬 Log Half Cig</button>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:10px;color:#7a6a30;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px">Reduction Roadmap</div>
+      <div class="cig-roadmap" id="cig-roadmap"></div>
+      <div style="font-size:9px;color:#4a3a20;margin-top:8px;text-align:center">2→1.5→1→0.5→🚭 by end of April</div>
+    </div>
+    <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:#3a5a6a" id="cig-start-lbl"></div>
+      <button id="cig-restart" style="font-size:10px;color:#3a6a8a;background:none;border:1px solid rgba(79,195,247,.2);border-radius:8px;padding:5px 9px">Restart</button>
+    </div>
+  </div>
+  <div class="panel" id="panel-caffeine">
+    <div id="caff-banner" style="margin-bottom:14px"></div>
+    <div class="card" id="caff-card" style="margin-bottom:12px;padding:18px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div style="font-size:15px;font-weight:bold;color:#4ade80" id="caff-title">Today's Caffeine</div><div style="font-size:10px;color:#3a6a4a;margin-top:1px">Soft limit 400mg · +9% Whoop boost</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:bold;color:#4ade80" id="caff-total">0<span style="font-size:12px;color:#3a6a4a">mg</span></div><div style="font-size:10px;color:#3a6a4a" id="caff-servings">0 servings</div></div>
+      </div>
+      <div style="height:8px;background:rgba(74,222,128,.1);border-radius:4px;margin-bottom:14px"><div id="caff-bar" style="height:100%;border-radius:4px;background:#4ade80;width:0%;transition:width .4s"></div></div>
+      <div class="caff-grid" id="caff-grid"></div>
+    </div>
+    <div id="caff-log-card" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:13px 14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em">Today's Log</div>
+        <button id="caff-clear" style="font-size:10px;color:#3a5a6a;background:none;border:1px solid rgba(79,195,247,.2);border-radius:7px;padding:3px 8px">Clear</button>
+      </div>
+      <div id="caff-log-entries" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+    <div class="info-card"><div style="color:#4ade80;font-weight:bold;margin-bottom:4px">Your Whoop data ☕</div>Caffeine gives you a <span style="color:#4ade80">+9% recovery boost</span> — well above the +1% average. Last serve before 1pm = 9+ hrs clearance before 10pm bedtime.</div>
+  </div>
+  <div class="panel" id="panel-supps">
+    <div style="border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:rgba(129,140,248,.06);border:1.5px solid rgba(129,140,248,.2)" id="supp-header">
+      <div><div style="font-size:14px;font-weight:bold;color:#818cf8" id="supp-title">Daily Supplements</div><div style="font-size:10px;color:#4a4a8a;margin-top:2px">Tap each one when you've taken it</div></div>
+      <div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#818cf8" id="supp-count">0<span style="font-size:13px;color:#4a4a8a">/10</span></div></div>
+    </div>
+    <div class="prog-bar-wrap" id="supp-prog"></div>
+    <div id="supp-cards"></div>
+    <div id="mag-note" style="display:none;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:10px;padding:9px 13px;font-size:10px;color:#34d399;text-align:center"></div>
+  </div>
+  <div class="panel" id="panel-whoop"><div id="whoop-cards"></div></div>
+  <div class="panel" id="panel-history" style="overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em">Past 30 Days</div>
+      <button id="share-btn" style="font-size:11px;font-weight:bold;color:#4fc3f7;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.3);border-radius:8px;padding:5px 11px;cursor:pointer">📋 Share Today</button>
+    </div>
+    <div id="share-feedback" style="display:none;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.25);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:#00e5a0;text-align:center">✓ Copied to clipboard!</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button id="whoop-export-btn" style="flex:1;font-size:10px;font-weight:bold;color:#00e5a0;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.25);border-radius:8px;padding:7px 4px;cursor:pointer">🔄 Whoop Journal</button>
+      <button id="export-week-btn" style="flex:1;font-size:10px;font-weight:bold;color:#a78bfa;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:7px 4px;cursor:pointer">📊 This Week</button>
+      <button id="export-april-btn" style="flex:1;font-size:10px;font-weight:bold;color:#4fc3f7;background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.25);border-radius:8px;padding:7px 4px;cursor:pointer">📅 All April</button>
+    </div>
+    <div id="history-list"></div>
+    <div style="font-size:9px;color:#1e3a4a;text-align:center;margin-top:8px">Data saves automatically at midnight each day</div>
+  </div>
+  <div class="panel" id="panel-sex"><div id="sex-cards"></div></div>
+  <div class="panel" id="panel-oral">
+    <div style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic">Brush 3 seconds per tooth · front, back &amp; biting surfaces</div>
+    <div id="oral-cards"></div>
+  </div>
+  <div class="panel" id="panel-screentime"><div id="screentime-cards"></div></div>
+  <div class="panel" id="panel-habits"><div id="habits-cards"></div></div>
+</div>
+
+<script>
+const DAY_TYPES=[
+  {id:"rest",label:"Rest Day",emoji:"😴",target:3000,seeking:1,bulk:0,salts:0,note:"Baseline maintenance — no Hydration Salts needed"},
+  {id:"walking",label:"Walking",emoji:"🚶",target:3500,seeking:1,bulk:0,salts:0,note:"Light outdoor activity — moderate sweat, Seeking Health sufficient"},
+  {id:"strength",label:"Strength Training",emoji:"🏋️",target:3500,seeking:2,bulk:0,salts:0,note:"A/C gym — moderate sweat, Hydration Salts not needed"},
+  {id:"cycling",label:"Cycling",emoji:"🚴",target:4000,seeking:2,bulk:0,salts:1,note:"Moderate-high sweat outdoors — Hydration Salts warranted"},
+  {id:"hiit",label:"Norwegian 4x4 HIIT",emoji:"🔥",target:4000,seeking:2,bulk:0,salts:1,note:"High intensity — front-load before session"},
+  {id:"bike",label:"Bike + Training",emoji:"🚴",target:4250,seeking:2,bulk:0,salts:1,note:"Double activity — highest electrolyte day"},
+  {id:"walk_golf",label:"Walking Golf",emoji:"⛳",target:4750,seeking:2,bulk:0,salts:1,note:"4+ hrs outdoors — high sweat, Hydration Salts warranted"},
+  {id:"cart_golf",label:"Cart Golf + Beers",emoji:"🍺",target:5000,seeking:2,bulk:0,salts:1,note:"Alcohol dehydrates — Hydration Salts warranted"},
+  {id:"gym_cart_golf",label:"Gym + Cart Golf",emoji:"🏋️⛳",target:5250,seeking:2,bulk:0,salts:1,note:"Double session — front-load electrolytes"},
+  {id:"ruck",label:"Ruck",emoji:"🎒",target:5250,seeking:2,bulk:0,salts:1,note:"Weighted outdoor carry — peak sweat demand"},
+];
+const CIG_PLAN=[2,1.5,1,0.5,0];
+const CAFF_SOURCES=[
+  {id:"espresso",label:"Espresso / Coffee",emoji:"☕",mg:150,mag:0,sodium:0,potassium:0},
+  {id:"preworkout",label:"Pre-workout",emoji:"💪",mg:200,mag:50,sodium:50,potassium:100},
+  {id:"energy",label:"Energy Drink",emoji:"⚡",mg:150,mag:0,sodium:0,potassium:0},
+  {id:"tea",label:"Tea",emoji:"🍵",mg:40,mag:0,sodium:0,potassium:0},
+];
+const ELEC_PRODUCTS=[
+  {id:"seeking",label:"Seeking Health",sub:"Optimal Electrolyte",color:"#c084fc",rgb:"192,132,252",outOfStock:false,minerals:["Potassium","Magnesium","Sodium"],mfn:(s)=>[s*500,s*125,s*150],hint:"Auto-logs +450ml water 💧 · Take with breakfast or pre-training"},
+  {id:"salts",label:"Bulk Nutrients Hydration Salts",sub:"Powder · ~1,000mg sodium per serve",color:"#38bdf8",rgb:"56,189,248",outOfStock:false,minerals:["Sodium","Potassium","Magnesium"],mfn:(s)=>[s*1014,s*200,s*60],hint:"Auto-logs +450ml water 💧 · High-sweat sessions only — adds ~1,000mg Na"},
+];
+const SUPPS=[
+  {id:"omega",label:"Nordic Naturals Ultimate Omega",emoji:"🐟",dose:"2 softgels · 1280mg Omega-3",sub:"AM · with breakfast",color:"56,189,248",tip:"Take with breakfast — fat improves absorption",group:"AM with Breakfast"},
+  {id:"theanineAM",label:"L-Theanine · Morning",emoji:"🧘",dose:"1 cap · 200mg",sub:"AM · pairs with morning coffee",color:"167,139,250",tip:"Take with morning caffeine for smooth, jitter-free energy",group:"AM with Breakfast"},
+  {id:"d3k2",label:"Vitamin D3 / K2",emoji:"☀️",dose:"1 cap · D3 + K2 combo",sub:"AM · with breakfast (fat-soluble)",color:"253,224,71",tip:"K2 directs calcium to bones, away from arteries — pair with fat",group:"AM with Breakfast"},
+  {id:"glycineAM",label:"Glycine · Morning",emoji:"🌱",dose:"AM · with breakfast",sub:"Tap dose to log (1g pills)",color:"134,239,172",tip:"Anti-inflammatory amino acid — supports collagen & glutathione synthesis",group:"AM with Breakfast",doseOptions:[1,2,3],doseUnit:"g",defaultDose:1},
+  {id:"finasteride",label:"Finasteride",emoji:"💊",dose:"¼ tablet",sub:"AM · with breakfast",color:"96,165,250",tip:"Quarter tablet daily — take consistently at the same time",group:"AM with Breakfast"},
+  {id:"vitb",label:"Herbs of Gold B Complete",emoji:"⚡",dose:"1 tablet · sustained release 8hrs",sub:"Post-workout smoothie",color:"251,191,36",tip:"Take with your post-workout smoothie for all-day energy",group:"Post-Workout Smoothie"},
+  {id:"creatine",label:"Creatine Monohydrate",emoji:"💪",dose:"15g",sub:"Post-workout smoothie",color:"251,146,60",tip:"Add to post-workout smoothie — consistency is what counts",group:"Post-Workout Smoothie"},
+  {id:"mag",label:"Magnesium Glycinate",emoji:"😴",dose:"PM · before bed",sub:"Tap dose to log",color:"52,211,153",tip:"150mg is your sweet spot — 300mg has caused restless legs",group:"PM Before Bed",doseOptions:[150,300],doseUnit:"mg",defaultDose:150},
+  {id:"glycinePM",label:"Glycine · Night",emoji:"🌙",dose:"PM · 60-90 min before bed",sub:"Tap dose to log (1g pills)",color:"134,239,172",tip:"Titrate up: 1g → 2g → 3g over weeks. Take earlier so vasodilation peaks before sleep, not during.",group:"PM Before Bed",doseOptions:[1,2,3],doseUnit:"g",defaultDose:1},
+  {id:"theaninePM",label:"L-Theanine · Night",emoji:"🌙",dose:"1 cap · 200mg",sub:"PM · wind-down",color:"167,139,250",tip:"Take after dinner to ease into wind-down mode",group:"PM Before Bed"},
+];
+const today=new Date().toDateString();
+const getWeekKey=()=>{const d=new Date(),day=(d.getDay()+6)%7,mon=new Date(d);mon.setDate(d.getDate()-day);return `${mon.getFullYear()}-${mon.getMonth()}-${mon.getDate()}`;};
+const weekKey=getWeekKey();
+const ld=(k,def)=>{try{const v=localStorage.getItem(k+'_'+today);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sd=(k,v)=>{try{localStorage.setItem(k+'_'+today,JSON.stringify(v));}catch{}};
+const ldw=(k,def)=>{try{const v=localStorage.getItem(k+'_'+weekKey);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sdw=(k,v)=>{try{localStorage.setItem(k+'_'+weekKey,JSON.stringify(v));}catch{}};
+const ldg=(k,def)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const sdg=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+let viewState=null;
+// === EVENT LOG HELPERS (v8.4) ===
+function pushEventLog(key, entry){
+  if(!Array.isArray(state[key]))state[key]=[];
+  const nowT=new Date();
+  const t=nowT.toTimeString().slice(0,5);
+  state[key].push({time:t,...entry});
+  // Trigger re-render of all logs so they appear immediately even when caller only re-renders its own panel
+  try{if(typeof renderAllEventLogs==='function')renderAllEventLogs();}catch{}
+}
+function renderEventLog(containerId, logKey, opts){
+  opts=opts||{};
+  const cont=document.getElementById(containerId);
+  if(!cont)return;
+  const log=Array.isArray(state[logKey])?state[logKey]:[];
+  const title=opts.title||'Today\'s Log';
+  const emptyText=opts.emptyText||'No entries yet today';
+  const formatter=opts.formatter||(e=>e.label||JSON.stringify(e));
+  let html='<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 14px;margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:10px;color:#4a7a9b;font-weight:bold;text-transform:uppercase;letter-spacing:.12em">'+title+'</div><div style="font-size:9px;color:#3a5a6a">'+log.length+' '+(log.length===1?'entry':'entries')+'</div></div>';
+  if(log.length===0){
+    html+='<div style="font-size:11px;color:#3a5a6a;padding:6px 2px;font-style:italic">'+emptyText+'</div>';
+  } else {
+    log.forEach((e,i)=>{
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px;color:#9ab"><div><span style="color:#4fc3f7;font-family:monospace;font-size:10px">'+(e.time||'--:--')+'</span> · '+formatter(e)+'</div><button data-elog="'+logKey+'" data-idx="'+i+'" style="background:none;border:none;color:#5a3a3a;font-size:11px;cursor:pointer;padding:2px 6px">×</button></div>';
+    });
+  }
+  html+='</div>';
+  // Append or replace
+  const elId=containerId+'-'+logKey+'-log';
+  let logEl=document.getElementById(elId);
+  if(!logEl){
+    logEl=document.createElement('div');
+    logEl.id=elId;
+    cont.appendChild(logEl);
+  }
+  logEl.innerHTML=html;
+  // Wire up delete buttons
+  logEl.querySelectorAll('[data-elog]').forEach(b=>{
+    b.onclick=()=>{
+      const k=b.dataset.elog;
+      const i=parseInt(b.dataset.idx);
+      if(!isNaN(i)&&Array.isArray(state[k])){
+        state[k].splice(i,1);
+        saveAll();
+        render();
+      }
+    };
+  });
+}
+
+function getS(){return viewState||state;}
+let state={
+  bodyWeight:ld('bodyWeight',0),bodyFatPct:ld('bodyFatPct',0),
+  whoopRecovery:ld('whoopRecovery',0),whoopSleep:ld('whoopSleep',0),whoopHRV:ld('whoopHRV',0),whoopRHR:ld('whoopRHR',0),whoopStrain:ld('whoopStrain',0),whoopSleepHrs:ld('whoopSleepHrs',0),whoopRestorativeSleep:ld('whoopRestorativeSleep',0),whoopVO2:ld('whoopVO2',0),
+  bodyCalDeficit:ld('bodyCalDeficit',false),bodyProtein:ld('bodyProtein',false),bodyCarbs:ld('bodyCarbs',false),bodyFat:ld('bodyFat',false),bodyFibre:ld('bodyFibre',false),
+  water:ld('water',0),dayTypeId:ld('daytype','rest'),
+  seeking:ld('seeking',0),bulk:ld('bulk',0),salts:ld('salts',0),
+  sessionDrinks:ld('sessionDrinks',0),weekDrinks:ldw('weekDrinks',0),lastDrinkTime:ld('lastDrinkTime',''),
+  mjEdible:ld('mjEdible',0),mjVape:ld('mjVape',0),lastMJTime:ld('lastMJTime',''),
+  cigs:ld('cigs',0),lastSmokeTime:ld('lastSmokeTime',''),cigStartDate:ldg('cigStartDate',new Date().toISOString().slice(0,10)),cigQuitDate:ldg('cigQuitDate',new Date().toISOString().slice(0,10)),cigRelapseCount:ldg('cigRelapseCount',0),cigLastRelapseDate:ldg('cigLastRelapseDate',''),
+  caffLog:ld('caffLog',[]),waterLog:ld('waterLog',[]),drinksLog:ld('drinksLog',[]),mjLog:ld('mjLog',[]),smokesLog:ld('smokesLog',[]),suppLog:ld('suppLog',[]),oralLog:ld('oralLog',[]),sexLog:ld('sexLog',[]),habitsLog:ld('habitsLog',[]),electroLog:ld('electroLog',[]),
+  suppOmega:ld('suppOmega',false),suppTheanineAM:ld('suppTheanineAM',false),suppTheaninePM:ld('suppTheaninePM',false),suppVitB:ld('suppVitB',false),suppMag:ld('suppMag',false),suppFinasteride:ld('suppFinasteride',false),suppCreatine:ld('suppCreatine',false),suppD3k2:ld('suppD3k2',false),suppGlycineAM:ld('suppGlycineAM',false),suppGlycinePM:ld('suppGlycinePM',false),suppMagDose:ld('suppMagDose',150),suppGlycineAMDose:ld('suppGlycineAMDose',1),suppGlycinePMDose:ld('suppGlycinePMDose',1),
+  oralBrushAM:ld('oralBrushAM',false),oralMouthwashAM:ld('oralMouthwashAM',false),oralBrushPM:ld('oralBrushPM',false),oralFlossPM:ld('oralFlossPM',false),oralPickstersPM:ld('oralPickstersPM',false),oralMouthwashPM:ld('oralMouthwashPM',false),
+  dailySteps:ld('dailySteps',0),screenTimeMins:ld('screenTimeMins',0),
+  caffOverride:false,drinkOverride:false,
+  habitMeditation:ld('habitMeditation',false),habitPliability:ld('habitPliability',false),lastMedTime:ld('lastMedTime',''),lastStretchTime:ld('lastStretchTime',''),
+  habitStrengthMins:ldw('habitStrengthMins',0),habitZone13Mins:ldw('habitZone13Mins',0),habitZone45Mins:ldw('habitZone45Mins',0),
+  sexActivity:ld('sexActivity',false),sexActivityCount:ld('sexActivityCount',0),sexActivityTime:ld('sexActivityTime',''),sexMasturbation:ld('sexMasturbation',false),sexMasturbationCount:ld('sexMasturbationCount',0),sexMasturbationTime:ld('sexMasturbationTime',''),
+  activeTab:'body',
+};
+function saveAll(){
+  // EDIT MODE: when editing a past day, save the entire state as a snap and skip the live keys
+  if(state.__editing){
+    try{
+      const snap=buildSnapFromCurrentState(state.__editing);
+      localStorage.setItem('snap_'+state.__editing,JSON.stringify(snap));
+    }catch(err){console.error('Edit save failed:',err);}
+    return;
+  }
+  sd('bodyWeight',state.bodyWeight);sd('bodyFatPct',state.bodyFatPct);
+  sd('whoopRecovery',state.whoopRecovery);sd('whoopSleep',state.whoopSleep);sd('whoopHRV',state.whoopHRV);sd('whoopRHR',state.whoopRHR);sd('whoopStrain',state.whoopStrain);sd('whoopSleepHrs',state.whoopSleepHrs);sd('whoopRestorativeSleep',state.whoopRestorativeSleep);sd('whoopVO2',state.whoopVO2);
+  sd('bodyCalDeficit',state.bodyCalDeficit);sd('bodyProtein',state.bodyProtein);sd('bodyCarbs',state.bodyCarbs);sd('bodyFat',state.bodyFat);sd('bodyFibre',state.bodyFibre);
+  sd('water',state.water);sd('daytype',state.dayTypeId);
+  sd('seeking',state.seeking);sd('bulk',state.bulk);sd('salts',state.salts);
+  sd('sessionDrinks',state.sessionDrinks);sdw('weekDrinks',state.weekDrinks);
+  sd('lastDrinkTime',state.lastDrinkTime);
+  sd('sexActivity',state.sexActivity);sd('sexActivityTime',state.sexActivityTime);
+  sd('sexMasturbation',state.sexMasturbation);sd('sexMasturbationTime',state.sexMasturbationTime);
+  sd('mjEdible',state.mjEdible);sd('mjVape',state.mjVape);
+  sd('lastMJTime',state.lastMJTime);sd('lastSmokeTime',state.lastSmokeTime);
+  sd('lastMedTime',state.lastMedTime);sd('lastStretchTime',state.lastStretchTime);
+  sd('cigs',state.cigs);sdg('cigStartDate',state.cigStartDate);sdg('cigQuitDate',state.cigQuitDate);sdg('cigRelapseCount',state.cigRelapseCount);sdg('cigLastRelapseDate',state.cigLastRelapseDate);
+  sd('caffLog',state.caffLog);sd('waterLog',state.waterLog);sd('drinksLog',state.drinksLog);sd('mjLog',state.mjLog);sd('smokesLog',state.smokesLog);sd('suppLog',state.suppLog);sd('oralLog',state.oralLog);sd('sexLog',state.sexLog);sd('habitsLog',state.habitsLog);sd('electroLog',state.electroLog);
+  sd('suppOmega',state.suppOmega);sd('suppTheanineAM',state.suppTheanineAM);
+  sd('suppTheaninePM',state.suppTheaninePM);sd('suppVitB',state.suppVitB);
+  sd('suppMag',state.suppMag);sd('suppFinasteride',state.suppFinasteride);sd('suppCreatine',state.suppCreatine);sd('suppD3k2',state.suppD3k2);sd('suppGlycineAM',state.suppGlycineAM);sd('suppGlycinePM',state.suppGlycinePM);sd('suppMagDose',state.suppMagDose);sd('suppGlycineAMDose',state.suppGlycineAMDose);sd('suppGlycinePMDose',state.suppGlycinePMDose);
+  sd('oralBrushAM',state.oralBrushAM);sd('oralMouthwashAM',state.oralMouthwashAM);
+  sd('oralBrushPM',state.oralBrushPM);sd('oralFlossPM',state.oralFlossPM);
+  sd('oralPickstersPM',state.oralPickstersPM);sd('oralMouthwashPM',state.oralMouthwashPM);
+  sd('dailySteps',state.dailySteps);
+  sd('screenTimeMins',state.screenTimeMins);
+  sd('habitMeditation',state.habitMeditation);sd('habitPliability',state.habitPliability);
+  sdw('habitStrengthMins',state.habitStrengthMins);
+  sdw('habitZone13Mins',state.habitZone13Mins);
+  sdw('habitZone45Mins',state.habitZone45Mins);
+}
+const fml=ml=>ml>=1000?(ml/1000).toFixed(1)+'L':ml+'ml';
+const sc=pct=>{if(pct>=100)return'#00e5a0';if(pct>=60)return'#4fc3f7';if(pct>=30)return'#ffd54f';return'#ef5350';};
+const us=pct=>{if(pct>=100)return{l:'Well hydrated 💪',c:'#00e5a0'};if(pct>=60)return{l:'Getting there 👍',c:'#4fc3f7'};if(pct>=30)return{l:'Drink up 🚰',c:'#ffd54f'};return{l:'Dehydrated! 🚨',c:'#ef5350'};};
+const now=()=>new Date();
+const getAppWeek=s=>{if(!s)return 0;const diff=Math.floor((new Date()-new Date(s))/86400000);return Math.min(Math.floor(diff/7),CIG_PLAN.length-1);};
+const fmt05=v=>v%1===0?String(v):v.toFixed(1);
+(document.getElementById('hdr-date')||{}).textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+const dd=document.getElementById('day-dropdown');if(dd){
+DAY_TYPES.forEach(d=>{
+  const b=document.createElement('button');
+  b.className='day-option'+(d.id===state.dayTypeId?' active':'');
+  b.dataset.id=d.id;
+  b.innerHTML=`<span>${d.emoji} ${d.label}</span><span class="ml">${fml(d.target)}</span>`;
+  b.onclick=()=>{state.dayTypeId=d.id;saveAll();setShowDD(false);render();};
+  dd.appendChild(b);
+});
+let ddOpen=false;
+function setShowDD(v){ddOpen=v;if(dd)dd.classList.toggle('open',v);}
+(document.getElementById('day-btn')||{}).onclick=()=>setShowDD(!ddOpen);
+document.addEventListener('click',e=>{if(!e.target.closest('.day-selector'))setShowDD(false);});
+}
+const TABS=[{id:'body',emoji:'⚖️',title:'Body'},{id:'water',emoji:'💧',title:'Water'},{id:'electrolytes',emoji:'⚡',title:'Electro'},{id:'supps',emoji:'💊',title:'Supps'},{id:'caffeine',emoji:'☕',title:'Caffeine'},{id:'oral',emoji:'🦷',title:'Oral'},{id:'habits',emoji:'🏃',title:'Habits'},{id:'screentime',emoji:'📱',title:'Screen'},{id:'drinks',emoji:'🍻',title:'Drinks'},{id:'smokes',emoji:'🚬',title:'Smokes'},{id:'sex',emoji:'💋',title:'Sex'},{id:'whoop',emoji:'🫀',title:'Whoop'}];
+const tabsEl=document.getElementById('tabs');
+TABS.forEach(t=>{
+  const b=document.createElement('button');
+  b.className='tab'+(t.id===state.activeTab?' active':'');
+  b.id='tab-'+t.id;
+  b.innerHTML=`<span class="tab-icon">${t.emoji}</span><span>${t.title}</span>`;
+  b.onclick=()=>{
+    state.activeTab=t.id;
+    const hp=document.getElementById('panel-history');
+    if(hp){hp.style.display='none';hp.className='panel';}
+    const hb=document.getElementById('history-toggle-btn');
+    if(hb){hb.style.color='#4a7a9b';hb.style.background='rgba(74,122,155,.1)';hb.style.border='1px solid rgba(74,122,155,.25)';}
+    TABS.forEach(x=>{
+      document.getElementById('tab-'+x.id).className='tab'+(x.id===t.id?' active':'');
+      const p=document.getElementById('panel-'+x.id);
+      if(p){p.className='panel'+(x.id===t.id?' active':'');p.style.display=x.id===t.id?'block':'none';}
+    });
+    try{
+      if(t.id==='oral'){renderOral();}
+      else if(t.id==='habits'){renderHabits();}
+      else if(t.id==='screentime'){renderScreenTime();}
+      else if(t.id==='whoop'){renderWhoop();}
+      else if(t.id==='sex'){renderSex();}
+    }catch(err){console.error('Tab render failed:',err.message);}
+  };
+  tabsEl.appendChild(b);
+});
+(document.getElementById('history-toggle-btn')||{}).onclick=()=>{
+  const panel=document.getElementById('panel-history');
+  const btn=document.getElementById('history-toggle-btn');
+  if(!panel)return;
+  const isOpen=panel.style.display==='block';
+  document.querySelectorAll('.panel').forEach(p=>{p.style.display='none';p.className='panel';});
+  if(!isOpen){
+    panel.style.display='block';
+    panel.className='panel active';
+    saveSnapshot();try{renderHistory();}catch(err){console.error("History failed:",err.message);}
+    btn.style.color='#4fc3f7';btn.style.background='rgba(79,195,247,.15)';
+    btn.style.border='1px solid rgba(79,195,247,.4)';
+  } else {
+    const activeId=state.activeTab||'body';
+    const activePanel=document.getElementById('panel-'+activeId);
+    if(activePanel){activePanel.style.display='block';activePanel.className='panel active';}
+    btn.style.color='#4a7a9b';btn.style.background='rgba(74,122,155,.1)';
+    btn.style.border='1px solid rgba(74,122,155,.25)';
+  }
+};
+(document.getElementById('tap-water')||{}).onclick=()=>{state.water+=450;pushEventLog('waterLog',{label:'+450ml',amount:450});saveAll();render();};
+(document.getElementById('undo-water')||{}).onclick=()=>{state.water=Math.max(0,state.water-450);saveAll();render();};
+(document.getElementById('reset-btn')||{}).onclick=()=>{
+  if(!confirm('Reset all of today\'s tracking?'))return;
+  state.bodyCalDeficit=false;state.bodyProtein=false;state.bodyCarbs=false;state.bodyFat=false;state.bodyFibre=false;
+  state.water=0;state.seeking=0;state.bulk=0;state.salts=0;
+  state.sessionDrinks=0;state.cigs=0;state.caffLog=[];state.waterLog=[];state.drinksLog=[];state.mjLog=[];state.smokesLog=[];state.suppLog=[];state.oralLog=[];state.sexLog=[];state.habitsLog=[];state.electroLog=[];
+  state.suppOmega=false;state.suppTheanineAM=false;state.suppTheaninePM=false;
+  state.suppVitB=false;state.suppMag=false;state.suppFinasteride=false;state.suppCreatine=false;state.suppD3k2=false;state.suppGlycineAM=false;state.suppGlycinePM=false;state.suppMagDose=150;state.suppGlycineAMDose=1;state.suppGlycinePMDose=1;
+  state.oralBrushAM=false;state.oralMouthwashAM=false;
+  state.oralBrushPM=false;state.oralFlossPM=false;state.oralPickstersPM=false;state.oralMouthwashPM=false;
+  state.dailySteps=0;state.screenTimeMins=0;
+  state.habitMeditation=false;state.habitPliability=false;
+  saveAll();render();
+};
+let drinkWarnTimer=null;
+function showDrinkWarn(msg){
+  const el=document.getElementById('drink-warning');
+  el.textContent=msg;el.style.display='block';
+  if(drinkWarnTimer)clearTimeout(drinkWarnTimer);
+  drinkWarnTimer=setTimeout(()=>{el.style.display='none';},3500);
+}
+function addDrink(amt){
+  const h=now().getHours();
+  if(h>=20&&!state.drinkOverride){showDrinkWarn('⏰ It\'s past 8pm — tap Override to log anyway.');return;}
+  if(state.sessionDrinks>=4){showDrinkWarn('🚫 4 std drink session limit reached.');return;}
+  if(state.weekDrinks>=10){showDrinkWarn('🚫 10 std drink weekly limit reached.');return;}
+  state.sessionDrinks=Math.round((state.sessionDrinks+amt)*10)/10;
+  pushEventLog('drinksLog',{label:fmt05(amt)+' std drink'+(amt>1?'s':''),amount:amt});
+  state.weekDrinks=Math.round((state.weekDrinks+amt)*10)/10;
+  state.water+=Math.round(250*amt);
+  state.lastDrinkTime=new Date().toTimeString().slice(0,5);
+  saveAll();render();
+}
+document.getElementById('drink-minus').onclick=()=>{
+  if(state.sessionDrinks<=0)return;
+  const r=state.sessionDrinks>=1?1:state.sessionDrinks;
+  state.sessionDrinks=Math.round(Math.max(0,state.sessionDrinks-r)*10)/10;
+  state.weekDrinks=Math.round(Math.max(0,state.weekDrinks-r)*10)/10;
+  state.water=Math.max(0,state.water-Math.round(250*r));
+  saveAll();render();
+};
+(document.getElementById('drink-1')||{}).onclick=()=>addDrink(1);
+(document.getElementById('drink-15')||{}).onclick=()=>addDrink(1.5);
+(document.getElementById('cig-minus')||{}).onclick=()=>{state.cigs=Math.max(0,Math.round((state.cigs-0.5)*10)/10);saveAll();render();};
+(document.getElementById('cig-plus')||{}).onclick=()=>{
+  // Build modal dynamically and append to body — guarantees it can't leak as inline content
+  const existing=document.getElementById('relapse-modal');
+  if(existing)existing.remove();
+  const quitDate=new Date(state.cigQuitDate);
+  const nowD=new Date();
+  const streakDays=Math.max(0,Math.floor((nowD-quitDate)/86400000));
+  const moneyLost=streakDays*15;
+  const relCount=state.cigRelapseCount||0;
+  const overlay=document.createElement('div');
+  overlay.id='relapse-modal';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
+  overlay.innerHTML='<div style="background:#0a0a0a;border:2px solid #ef5350;border-radius:18px;padding:20px;max-width:360px;width:100%;margin:auto"><div style="text-align:center;margin-bottom:14px"><div style="font-size:36px">⚠️</div><div style="font-size:18px;font-weight:bold;color:#ef5350;margin-top:4px;letter-spacing:.05em">RELAPSE WARNING</div><div style="font-size:10px;color:#7a4040;margin-top:3px;text-transform:uppercase;letter-spacing:.15em">Read this before you tap Log</div></div><div style="background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.3);border-radius:10px;padding:11px;margin-bottom:14px;text-align:center"><div style="font-size:11px;color:#2a6a4a;text-transform:uppercase;letter-spacing:.1em">You are currently</div><div style="font-size:24px;font-weight:bold;color:#00e5a0;margin-top:3px">'+streakDays+' day'+(streakDays!==1?'s':'')+' smoke-free</div></div><div style="background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.4);border-radius:10px;padding:12px;margin-bottom:12px"><div style="font-size:10px;color:#ef9090;font-weight:bold;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">⚰️ The numbers</div><div style="font-size:12px;color:#e0d0d0;line-height:1.7"><div>• <strong style="color:#ef5350">17 minutes</strong> off your life expectancy. Per cigarette. (UCL, 2025)</div><div>• Smokers die <strong style="color:#ef5350">12-13 years earlier</strong> on average vs never-smokers</div><div>• <strong style="color:#ef5350">85%</strong> of lung cancer cases are caused by smoking</div><div>• <strong style="color:#ef5350">1 in 2</strong> long-term smokers die of a smoking-related disease</div></div></div><div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:12px;margin-bottom:12px"><div style="font-size:10px;color:#a78bfa;font-weight:bold;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">🧬 Robbing your healthspan</div><div style="font-size:12px;color:#d0c8e8;line-height:1.7"><div>• Smoking accelerates biological aging more than any other lifestyle factor</div><div>• Quitting = <strong style="color:#a78bfa">10.17 years</strong> of GrimAge reversal — the single biggest lever you have</div><div>• At 39, quitting now buys back <strong style="color:#a78bfa">~8 of the 9 years</strong> smoking would steal from you</div><div>• Every relapse re-loads epigenetic damage that takes years to undo</div></div></div><div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:12px;margin-bottom:14px"><div style="font-size:10px;color:#fbbf24;font-weight:bold;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">📉 Right now, this cigarette costs you</div><div style="font-size:12px;color:#e8d8a0;line-height:1.7"><div>• Streak reset to <strong style="color:#fbbf24">0 days</strong></div><div>• <strong style="color:#fbbf24">~$'+moneyLost+'</strong> of accumulated savings forfeited</div><div>• <strong style="color:#fbbf24">−12% Whoop recovery</strong> for the next 48 hours</div><div>• Lifetime relapse count: <strong style="color:#fbbf24">'+relCount+'</strong> → +1</div><div>• You have a <strong style="color:#fbbf24">son</strong>. He needs you here for as long as possible.</div></div></div><div style="background:rgba(239,83,80,.05);border-left:3px solid #ef5350;padding:10px 14px;margin-bottom:14px"><div style="font-size:13px;color:#e0d0d0;font-style:italic;line-height:1.5">"You decided you don\u2019t want to be a smoker anymore. The craving is not you. It\u2019s the addiction speaking through you."</div></div><div style="text-align:center;margin-bottom:8px"><div style="font-size:11px;color:#6ea8d0;margin-bottom:6px">If you still want to log, type <strong style="color:#ef5350;letter-spacing:2px">RELAPSE</strong> in capitals</div></div><input id="relapse-input" type="text" autocapitalize="characters" autocomplete="off" placeholder="Type RELAPSE here" style="width:100%;background:rgba(239,83,80,.05);border:1.5px solid rgba(239,83,80,.3);border-radius:10px;padding:11px 14px;color:#e0f0ff;font-size:16px;font-family:Georgia,serif;margin-bottom:12px;-webkit-appearance:none;text-align:center;letter-spacing:2px"/><div style="display:flex;gap:8px;margin-bottom:12px"><button id="relapse-cancel" style="flex:3;padding:14px;border-radius:11px;font-size:14px;font-weight:bold;border:1.5px solid rgba(74,222,128,.55);background:rgba(74,222,128,.2);color:#4ade80;cursor:pointer">✓ Step Away</button><button id="relapse-confirm" style="flex:1;padding:14px;border-radius:11px;font-size:12px;font-weight:bold;border:1.5px solid rgba(239,83,80,.4);background:rgba(239,83,80,.1);color:#ef5350;cursor:pointer;opacity:0.4" disabled>Log</button></div><div style="font-size:11px;color:#6ea8d0;text-align:center;line-height:1.6;background:rgba(74,222,128,.04);border:1px solid rgba(74,222,128,.18);border-radius:8px;padding:10px"><strong style="color:#4ade80">The craving peaks at 3-5 minutes and fades.</strong><br/>Drink a glass of water. Walk outside. Call someone.<br/><span style="color:#3a5a4a">You\u2019ve already done the hard part by quitting.</span></div></div>';
+  document.body.appendChild(overlay);
+  const inp=overlay.querySelector('#relapse-input');
+  const btnConfirm=overlay.querySelector('#relapse-confirm');
+  const btnCancel=overlay.querySelector('#relapse-cancel');
+  const closeModal=()=>{overlay.remove();};
+  inp.addEventListener('input',()=>{
+    const ok=inp.value.trim()==='RELAPSE';
+    btnConfirm.disabled=!ok;
+    btnConfirm.style.opacity=ok?'1':'0.4';
+    btnConfirm.style.background=ok?'rgba(239,83,80,.25)':'rgba(239,83,80,.1)';
+  });
+  btnCancel.addEventListener('click',closeModal);
+  btnConfirm.addEventListener('click',()=>{
+    if(inp.value.trim()!=='RELAPSE')return;
+    state.cigs=Math.round((state.cigs+0.5)*10)/10;
+    state.lastSmokeTime=new Date().toTimeString().slice(0,5);
+    pushEventLog('smokesLog',{label:'⚠️ Relapse logged',amount:0.5});
+    state.cigRelapseCount=(state.cigRelapseCount||0)+1;
+    state.cigLastRelapseDate=new Date().toISOString().slice(0,10);
+    state.cigQuitDate=new Date().toISOString().slice(0,10);
+    closeModal();
+    saveAll();render();
+  });
+  setTimeout(()=>{inp.focus();},100);
+};
+(document.getElementById('cig-restart')||{}).onclick=()=>{if(confirm('Reset smoke-free streak from today?\n\nThis sets your quit date to today and zeros the streak counter. Use this if your streak data got out of sync.')){state.cigQuitDate=new Date().toISOString().slice(0,10);state.cigs=0;saveAll();render();}};
+document.addEventListener('click',function(e){
+  if(e.target.dataset&&e.target.dataset.mje){
+    const v=parseInt(e.target.dataset.mje);
+    state.mjEdible=Math.max(0,state.mjEdible+v);
+    if(v>0)pushEventLog('mjLog',{label:'Edible '+(v===0.25?'¼':v===0.5?'½':v===0.75?'¾':v)+' gummy',amount:v,kind:'edible'});
+    state.lastMJTime=new Date().toTimeString().slice(0,5);
+    saveAll();try{renderDrinks();}catch(err){console.error("Drinks failed:",err.message);}
+  }
+});
+(document.getElementById('mj-vape-1')||{}).onclick=()=>{state.mjVape++;state.lastMJTime=new Date().toTimeString().slice(0,5);pushEventLog('mjLog',{label:'Vape +1 puff',amount:1,kind:'vape'});saveAll();renderDrinks();};
+(document.getElementById('mj-vape-2')||{}).onclick=()=>{state.mjVape+=2;state.lastMJTime=new Date().toTimeString().slice(0,5);pushEventLog('mjLog',{label:'Vape +2 puffs',amount:2,kind:'vape'});saveAll();renderDrinks();};
+(document.getElementById('mj-vape-minus')||{}).onclick=()=>{state.mjVape=Math.max(0,state.mjVape-1);saveAll();renderDrinks();};
+(document.getElementById('caff-clear')||{}).onclick=()=>{if(confirm('Clear caffeine log?')){state.caffLog=[];saveAll();render();}};
+document.addEventListener('click',e=>{
+  if(e.target.id==='caff-override-btn'){state.caffOverride=true;renderCaff();}
+  if(e.target.id==='caff-override-cancel'){state.caffOverride=false;renderCaff();}
+  if(e.target.id==='drink-override-btn'){state.drinkOverride=true;renderDrinks();}
+  if(e.target.id==='drink-override-cancel'){state.drinkOverride=false;renderDrinks();}
+});
+function renderElec(){
+  const s=getS();
+  const dt=DAY_TYPES.find(d=>d.id===s.dayTypeId)||DAY_TYPES[0];
+  document.getElementById('elec-note').textContent=`${dt.emoji} ${dt.note}`;
+  const scoops={seeking:s.seeking||0,bulk:s.bulk||0,salts:s.salts||0};
+  const targets={seeking:dt.seeking,bulk:Math.max(dt.bulk,1),salts:Math.max(dt.salts,1)};
+  const optional={seeking:false,bulk:dt.bulk===0,salts:dt.salts===0};
+  const container=document.getElementById('elec-cards');
+  container.innerHTML='';
+  ELEC_PRODUCTS.forEach(ep=>{
+    const sv=scoops[ep.id],t=targets[ep.id],done=sv>=t,opt=optional[ep.id];
+    const mv=ep.mfn(sv);
+    const div=document.createElement('div');
+    div.className='card';
+    div.style.cssText='background:'+(done?'rgba('+ep.rgb+',.12)':'rgba('+ep.rgb+',.05)')+';border:1.5px solid rgba('+ep.rgb+','+(done?'0.5':'.22')+');margin-bottom:12px';
+    let mHTML=mv.some(v=>v>0)?('<div class="minerals">'+ep.minerals.map((m,i)=>'<div class="mineral"><div class="mineral-val" style="color:'+ep.color+'">'+mv[i]+'mg</div><div class="mineral-lbl">'+m+'</div></div>').join('')+'</div>'):'';
+    let segs=Array.from({length:t},(_,i)=>'<div class="progress-seg" style="background:'+(i<sv?ep.color:'rgba('+ep.rgb+',.12)')+'"></div>').join('');
+    div.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:10px"><div><div class="card-title" style="color:${ep.color}">${ep.label}</div><div class="card-sub">${ep.sub}</div></div><div style="text-align:right"><div style="font-size:12px;color:${ep.color}">${sv}/${t} serve${t!==1?'s':''}</div>${opt&&!done?'<div style="font-size:9px;color:#7a5a3a;margin-top:2px">optional today</div>':''}${done?'<div style="font-size:10px;color:#00e5a0;margin-top:1px">✓ Done!</div>':''}</div></div><div class="progress-row">${segs}</div>${sv>0?mHTML:''}<div class="add-row"><button class="add-minus" style="border:1px solid rgba(${ep.rgb},.28);background:rgba(${ep.rgb},.07);color:${ep.color}" data-ep="${ep.id}" data-act="minus">−</button><button class="add-plus" style="border:1px solid rgba(${ep.rgb},.45);background:rgba(${ep.rgb},.16);color:${ep.color}" data-ep="${ep.id}" data-act="plus">+ Add Serve</button></div><div class="card-hint" style="color:rgba(${ep.rgb},.45)">${ep.hint}</div>`;
+    container.appendChild(div);
+  });
+  container.querySelectorAll('button[data-ep]').forEach(b=>{
+    b.onclick=()=>{
+      const id=b.dataset.ep,act=b.dataset.act;
+      if(act==='minus') state[id]=Math.max(0,state[id]-1);
+      else {state[id]++;if(id==='seeking'||id==='salts') state.water+=450; pushEventLog('electroLog',{label:(id==='seeking'?'Seeking Health':id==='salts'?'Bulk Salts':id),amount:1,product:id});}
+      saveAll();try{renderElec();renderTotals();renderWater();}catch(err){console.error("Elec failed:",err.message);}
+    };
+  });
+  renderTotals();
+}
+function renderTotals(){
+  const s=getS();
+  const dt=DAY_TYPES.find(d=>d.id===s.dayTypeId)||DAY_TYPES[0];
+  const pw=(s.caffLog||[]).filter(e=>e.sourceId==='preworkout').length;
+  const suppNa=((s.seeking||0)*150)+((s.bulk||0)*113)+((s.salts||0)*1014)+(pw*50);
+  const suppK=((s.seeking||0)*500)+Math.round((s.bulk||0)*139.5)+((s.salts||0)*200)+(pw*100);
+  const suppMg=((s.seeking||0)*125)+((s.bulk||0)*127)+((s.salts||0)*60)+(pw*50)+((s.suppMag)?150:0);
+  const tgtK=Math.max((dt.seeking*500)+Math.round(dt.bulk*139.5)+(dt.salts*200),1);
+  const tgtNa=Math.max((dt.seeking*150)+(dt.bulk*113)+(dt.salts*1014),1);
+  const tgtMg=Math.max((dt.seeking*125)+(dt.bulk*127)+(dt.salts*60)+150,1);
+  const totals=[{label:'Potassium',val:suppK,target:tgtK,color:'#a78bfa'},{label:'Sodium',val:suppNa,target:tgtNa,color:'#fb923c'},{label:'Magnesium',val:suppMg,target:tgtMg,color:'#34d399'}];
+  const g=document.getElementById('totals-grid');
+  g.innerHTML=totals.map(m=>{const p=Math.min((m.val/m.target)*100,100);return `<div class="total-item"><div class="total-lbl">${m.label}</div><div class="total-val" style="color:${p>=100?'#00e5a0':m.color}">${m.val}mg</div><div class="mini-bar"><div class="mini-fill" style="width:${p}%;background:${p>=100?'#00e5a0':m.color}"></div></div></div>`;}).join('');
+  const FOOD_NA_BASELINE=2200;
+  const estTotalNa=suppNa+FOOD_NA_BASELINE;
+  const naEl=document.getElementById('na-total-note');
+  if(naEl){
+    let naColor,naWarn;
+    if(estTotalNa>3700){naColor='#ef5350';naWarn='⚠️ high';}
+    else if(estTotalNa>3200){naColor='#fbbf24';naWarn='borderline';}
+    else{naColor='#fb923c';naWarn='✓ on target';}
+    naEl.innerHTML=`Est. total sodium today: <span style="color:${naColor};font-weight:bold">~${estTotalNa.toLocaleString()}mg</span> <span style="color:${naColor}">(${naWarn})</span><br/><span style="color:#2a4a5a">supps ${suppNa}mg + food ~${FOOD_NA_BASELINE.toLocaleString()}mg</span>`;
+  }
+}
+function renderCaff(){
+  const s=getS();
+  const h=now().getHours(),mins=now().getMinutes();
+  const pastCutRaw=h>=13,minsLeft=pastCutRaw?0:(13-h)*60-mins;
+  const pastCut=pastCutRaw&&!state.caffOverride;
+  const totalMg=state.caffLog.reduce((a,e)=>a+e.mg,0);
+  const over=totalMg>400;
+  const banner=document.getElementById('caff-banner');
+  if(pastCutRaw&&!state.caffOverride){banner.innerHTML=`<div style="background:rgba(239,83,80,.1);border:1.5px solid rgba(239,83,80,.35);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:13px;color:#ef5350;font-weight:bold">⏰ 1pm cutoff passed</div><div style="font-size:10px;color:#9a4a48;margin-top:2px">No more caffeine</div><button id="caff-override-btn" style="margin-top:8px;font-size:10px;color:#ef9090;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4);border-radius:7px;padding:5px 12px;cursor:pointer">⚠️ Override</button></div>`;}
+  else if(pastCutRaw&&state.caffOverride){banner.innerHTML=`<div style="background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.4);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:12px;color:#fbbf24;font-weight:bold">⚠️ Override active</div><button id="caff-override-cancel" style="margin-top:6px;font-size:10px;color:#9a7a30;background:none;border:1px solid rgba(251,191,36,.3);border-radius:7px;padding:4px 10px;cursor:pointer">Cancel</button></div>`;}
+  else if(minsLeft<=60){banner.innerHTML=`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:12px;color:#fbbf24">⚠️ Cutoff in ${minsLeft}m</div></div>`;}
+  else{banner.innerHTML=`<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.18);border-radius:12px;padding:9px 14px;text-align:center"><div style="font-size:11px;color:#4ade80">✓ Cutoff at 1pm · ${Math.floor(minsLeft/60)}h ${minsLeft%60}m remaining</div></div>`;}
+  document.getElementById('caff-total').innerHTML=`${totalMg}<span style="font-size:12px;color:#3a6a4a">mg</span>`;
+  document.getElementById('caff-total').style.color=over?'#ef5350':'#4ade80';
+  const csEl=document.getElementById('caff-servings');if(csEl)csEl.textContent=`${state.caffLog.length} serving${state.caffLog.length!==1?'s':''}`;
+  document.getElementById('caff-bar').style.width=Math.min((totalMg/400)*100,100)+'%';
+  document.getElementById('caff-bar').style.background=over?'#ef5350':'#4ade80';
+  const grid=document.getElementById('caff-grid');
+  if(!grid)return;
+  grid.innerHTML='';
+  CAFF_SOURCES.forEach(src=>{
+    const b=document.createElement('button');
+    b.className='caff-src';b.disabled=pastCut;
+    b.style.cssText=`border:1px solid rgba(74,222,128,${pastCut?0.1:.35});background:rgba(74,222,128,${pastCut?0.03:.1});color:${pastCut?'#2a4a3a':'#4ade80'};cursor:${pastCut?'not-allowed':'pointer'}`;
+    b.innerHTML=`<span class="src-icon">${src.emoji}</span><span class="src-lbl">${src.label}</span><span class="src-mg" style="color:${pastCut?'#2a4a3a':'#3a8a5a'}">+${src.mg}mg${src.mag>0?' · +450ml 💧':''}</span>`;
+    b.onclick=()=>{if(pastCut)return;state.caffLog.push({sourceId:src.id,mg:src.mg,time:new Date().toTimeString().slice(0,5)});if(src.id==='preworkout')state.water+=450;saveAll();renderCaff();renderTotals();renderWater();};
+    grid.appendChild(b);
+  });
+  const logCard=document.getElementById('caff-log-card');
+  const logEntries=document.getElementById('caff-log-entries');
+  if(state.caffLog.length>0){
+    logCard.style.display='block';
+    logEntries.innerHTML=[...state.caffLog].reverse().map(e=>{
+      const src=CAFF_SOURCES.find(s=>s.id===e.sourceId);
+      return `<div class="log-entry"><span style="font-size:13px">${src?src.emoji:""} <span style="font-size:12px;color:#b0d0e8">${src?src.label:""}</span></span><div style="display:flex;gap:10px;align-items:center"><div style="text-align:right"><div style="font-size:12px;color:#4ade80;font-weight:bold">+${e.mg}mg</div></div><span style="font-size:10px;color:#3a5a6a">${e.time}</span></div></div>`;
+    }).join('');
+  } else {logCard.style.display='none';}
+}
+function renderSupps(){
+  const s=getS();
+  const vals={omega:!!s.suppOmega,theanineAM:!!s.suppTheanineAM,theaninePM:!!s.suppTheaninePM,vitb:!!s.suppVitB,creatine:!!s.suppCreatine,mag:!!s.suppMag,finasteride:!!s.suppFinasteride,d3k2:!!s.suppD3k2,glycineAM:!!s.suppGlycineAM,glycinePM:!!s.suppGlycinePM};
+  const done=Object.values(vals).filter(Boolean).length;
+  const all=done===10;
+  document.getElementById('supp-title').textContent=all?'All done today! 🎉':'Daily Supplements';
+  document.getElementById('supp-count').innerHTML=`${done}<span style="font-size:13px;color:#4a4a8a">/10</span>`;
+  document.getElementById('supp-count').style.color=all?'#00e5a0':'#818cf8';
+  const prog=document.getElementById('supp-prog');
+  const keys=['omega','theanineAM','d3k2','glycineAM','finasteride','vitb','creatine','mag','glycinePM','theaninePM'];
+  prog.innerHTML=keys.map(k=>`<div class="prog-seg" style="background:${vals[k]?(all?'#00e5a0':'#818cf8'):'rgba(129,140,248,.12)'}"></div>`).join('');
+  const cards=document.getElementById('supp-cards');
+  cards.innerHTML='';
+  let lastGroup='';
+  SUPPS.forEach(sp=>{
+    if(sp.group&&sp.group!==lastGroup){lastGroup=sp.group;const gh=document.createElement('div');gh.style.cssText='font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin:14px 0 6px;padding-left:2px';gh.textContent=sp.group;cards.appendChild(gh);}
+    const key2=sp.id==='mag'?'suppMag':sp.id==='finasteride'?'suppFinasteride':sp.id==='vitb'?'suppVitB':`supp${sp.id.charAt(0).toUpperCase()+sp.id.slice(1)}`;
+    const doseKey=key2+'Dose';
+    const taken=!!state[key2];
+    const currentDose=state[doseKey];
+    const div=document.createElement('div');
+    div.className='supp-card';
+    div.style.cssText='background:'+(taken?'rgba('+sp.color+',.12)':'rgba('+sp.color+',.04)')+';border:1.5px solid rgba('+sp.color+','+(taken?'0.45':'.18')+')';
+    let toggleHTML;
+    if(sp.doseOptions){
+      // Dose-pill selector
+      const pills=sp.doseOptions.map(d=>{
+        const sel=taken&&currentDose===d;
+        return `<button class="supp-dose-pill" data-sid="${sp.id}" data-dose="${d}" style="flex:1;padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1.5px solid rgba(${sp.color},${sel?0.65:.25});background:${sel?'rgba('+sp.color+',.3)':'rgba('+sp.color+',.05)'};color:rgba(${sp.color},${sel?1:.55});cursor:pointer">${d}${sp.doseUnit}</button>`;
+      }).join('');
+      toggleHTML=`<div style="display:flex;gap:5px;flex-shrink:0;margin-left:8px;min-width:${sp.doseOptions.length*42}px">${pills}</div>`;
+    } else {
+      toggleHTML=`<button class="supp-toggle" data-sid="${sp.id}" style="border:1.5px solid rgba(${sp.color},${taken?0.6:.3});background:${taken?'rgba('+sp.color+',.25)':'rgba('+sp.color+',.07)'};color:rgba(${sp.color},1)">${taken?'✓':'○'}</button>`;
+    }
+    const doseDisplay=sp.doseOptions?(taken?`<span style="color:rgba(${sp.color},1);font-weight:bold">Logged: ${currentDose}${sp.doseUnit}</span>`:`Tap dose to log`):sp.dose;
+    div.innerHTML=`<div class="supp-inner"><div class="supp-info"><div class="supp-name-row"><span style="font-size:18px">${sp.emoji}</span><span style="font-size:13px;font-weight:bold;color:rgba(${sp.color},1)">${sp.label}</span></div><div class="supp-dose">${doseDisplay}</div><div class="supp-sub">${sp.sub}</div></div>${toggleHTML}</div><div class="supp-tip" style="color:rgba(${sp.color},.4)">💡 ${sp.tip}</div>`;
+    cards.appendChild(div);
+  });
+  cards.querySelectorAll('.supp-toggle').forEach(b=>{
+    b.onclick=()=>{
+      const sid=b.dataset.sid;
+      const key=sid==='mag'?'suppMag':sid==='finasteride'?'suppFinasteride':sid==='vitb'?'suppVitB':`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
+      state[key]=!state[key];if(state[key])pushEventLog('suppLog',{label:sid,sid:sid,amount:1});saveAll();renderSupps();renderTotals();
+    };
+  });
+  cards.querySelectorAll('.supp-dose-pill').forEach(b=>{
+    b.onclick=()=>{
+      const sid=b.dataset.sid;
+      const dose=parseInt(b.dataset.dose);
+      const key=sid==='mag'?'suppMag':`supp${sid.charAt(0).toUpperCase()+sid.slice(1)}`;
+      const doseKey=key+'Dose';
+      // If tapping current dose while taken: untoggle. Otherwise: set dose and mark taken.
+      if(state[key]&&state[doseKey]===dose){
+        state[key]=false;
+      } else {
+        const wasOn=state[key]&&state[doseKey]===dose;
+        state[key]=true;
+        state[doseKey]=dose;
+        if(!wasOn)pushEventLog('suppLog',{label:sid+' '+dose+(sid==='mag'?'mg':'g'),sid:sid,amount:dose});
+      }
+      saveAll();renderSupps();renderTotals();
+    };
+  });
+  const mn=document.getElementById('mag-note');
+  if(state.suppMag){mn.style.display='block';mn.textContent='+'+(state.suppMagDose||150)+'mg magnesium counted in totals';}
+  else mn.style.display='none';
+}
+function renderWater(){
+  const s=getS();
+  const dt=DAY_TYPES.find(d=>d.id===s.dayTypeId)||DAY_TYPES[0];
+  const target=dt.target+((s.sessionDrinks||0)*250);
+  const pct=Math.min((state.water/target)*100,100);
+  const waveY=100-pct;
+  const color=sc(pct);
+  document.getElementById('wg-stop1').setAttribute('stop-color',color);
+  document.getElementById('wg-stop2').setAttribute('stop-color',color);
+  document.getElementById('wave-rect').setAttribute('y',waveY*1.76);
+  document.getElementById('wave-rect').setAttribute('fill','url(#wg)');
+  document.getElementById('wave-path').setAttribute('d',`M0,${waveY*1.76} Q50,${waveY*1.76-8} 100,${waveY*1.76} Q150,${waveY*1.76+8} 200,${waveY*1.76} L200,200 L0,200 Z`);
+  document.getElementById('wave-path').setAttribute('fill',color);
+  document.getElementById('arc').setAttribute('stroke',color);
+  document.getElementById('arc').setAttribute('stroke-dasharray',`${(pct/100)*553} 553`);
+  document.getElementById('svg-intake').textContent=fml(s.water||0);
+  document.getElementById('svg-target').textContent=`of ${fml(target)}`;
+  document.getElementById('svg-pct').textContent=`${Math.round(pct)}%`;
+  document.getElementById('svg-pct').setAttribute('fill',color);
+  const sp=us(pct);
+  const pill=document.getElementById('status-pill');
+  pill.textContent=sp.l;pill.style.background=sp.c+'16';pill.style.border=`1px solid ${sp.c}38`;pill.style.color=sp.c;
+  const rem=Math.max(target-(s.water||0),0);
+  const cups=Math.ceil(rem/450);
+  const remEl=document.getElementById('stat-remaining');
+  remEl.textContent=fml(rem);remEl.style.color=rem>0?'#ffd54f':'#00e5a0';
+  const cupEl=document.getElementById('stat-cups');
+  cupEl.textContent=rem>0?`${cups}×450ml`:'Done! ✓';cupEl.style.color=rem>0?'#4fc3f7':'#00e5a0';
+  document.getElementById('undo-water').disabled=state.water===0;
+  document.getElementById('day-label').textContent=`${dt.emoji} ${dt.label}`;
+  document.querySelectorAll('.day-option').forEach(o=>o.classList.toggle('active',o.dataset.id===state.dayTypeId));
+}
+
+function renderWhoop(){
+  const container=document.getElementById('whoop-cards');
+  if(!container)return;
+  container.innerHTML='';
+  const fields=[
+    {key:'whoopRecovery',label:'Recovery',emoji:'💚',unit:'%',tip:'Green ≥67% · Yellow 34-66% · Red ≤33%'},
+    {key:'whoopSleep',label:'Sleep Score',emoji:'😴',unit:'%',tip:'Overall sleep performance score'},
+    {key:'whoopHRV',label:'HRV',emoji:'❤️',unit:'ms',tip:'Heart rate variability — higher is better'},
+    {key:'whoopRHR',label:'Resting HR',emoji:'🫀',unit:'bpm',tip:'Resting heart rate — lower is better'},
+    {key:'whoopStrain',label:'Strain',emoji:'🔥',unit:'',tip:'Daily strain score (0-21)'},
+    {key:'whoopSleepHrs',label:'Sleep Hours',emoji:'🌙',unit:'h',tip:'Total sleep duration'},
+    {key:'whoopRestorativeSleep',label:'Restorative Sleep',emoji:'💫',unit:'%',tip:'Deep + REM sleep as % of total'},
+    {key:'whoopVO2',label:'VO₂ Max',emoji:'🫁',unit:'',tip:'Aerobic fitness'},
+  ];
+  const rc=state.whoopRecovery;
+  const rcColor=rc>=67?'#4ade80':rc>=34?'#fbbf24':'#ef5350';
+  container.innerHTML=`<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2);border-radius:16px;padding:16px;margin-bottom:12px"><div style="font-size:10px;color:#2a6a4a;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">📱 Whoop Data · Log after checking app</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div style="background:rgba(0,0,0,.2);border-radius:10px;padding:12px;text-align:center;border:1px solid ${rcColor}40"><div style="font-size:28px;font-weight:bold;color:${rcColor}">${rc||'—'}${rc?'%':''}</div><div style="font-size:10px;color:#2a4a3a;margin-top:2px">Recovery</div></div><div style="background:rgba(0,0,0,.2);border-radius:10px;padding:12px;text-align:center"><div style="font-size:28px;font-weight:bold;color:#a78bfa">${state.whoopSleep||'—'}${state.whoopSleep?'%':''}</div><div style="font-size:10px;color:#3a2a6a;margin-top:2px">Sleep Score</div></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#4fc3f7">${state.whoopHRV||'—'}${state.whoopHRV?'ms':''}</div><div style="font-size:9px;color:#1a4a6a;margin-top:2px">HRV</div></div><div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#fb923c">${state.whoopRHR||'—'}${state.whoopRHR?'bpm':''}</div><div style="font-size:9px;color:#5a2a1a;margin-top:2px">RHR</div></div><div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#fbbf24">${state.whoopStrain||'—'}</div><div style="font-size:9px;color:#5a4a10;margin-top:2px">Strain</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px"><div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#818cf8">${state.whoopSleepHrs||'—'}${state.whoopSleepHrs?'h':''}</div><div style="font-size:9px;color:#3a2a5a;margin-top:2px">Sleep Hours</div></div><div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#c084fc">${state.whoopRestorativeSleep||'—'}${state.whoopRestorativeSleep?'%':''}</div><div style="font-size:9px;color:#4a2a6a;margin-top:2px">Restorative</div></div><div style="text-align:center"><div style="font-size:16px;font-weight:bold;color:#34d399">${state.whoopVO2||'—'}</div><div style="font-size:9px;color:#1a4a3a;margin-top:2px">VO₂ Max</div></div></div></div>`;
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px';
+  fields.forEach(f=>{
+    const v=state[f.key];
+    const div=document.createElement('div');
+    div.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:10px';
+    div.innerHTML=`<div style="font-size:10px;color:#4a7a9b;margin-bottom:6px">${f.emoji} ${f.label}${f.unit?' ('+f.unit+')':''}</div><input data-wkey="${f.key}" type="number" step="${f.unit==='h'?0.1:1}" value="${v||''}" placeholder="—" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 10px;color:#e0f0ff;font-size:15px;-webkit-appearance:none"/><div style="font-size:9px;color:#2a3a4a;margin-top:4px">${f.tip}</div>`;
+    grid.appendChild(div);
+  });
+  container.appendChild(grid);
+  const saveBtn=document.createElement('button');
+  saveBtn.id='whoop-save-btn';
+  saveBtn.style.cssText='width:100%;padding:12px;border-radius:11px;font-size:13px;font-weight:bold;border:1.5px solid rgba(74,222,128,.45);background:rgba(74,222,128,.18);color:#4ade80;cursor:pointer;margin-bottom:12px';
+  saveBtn.textContent='Save Whoop Data';
+  container.appendChild(saveBtn);
+}
+function renderSex(){
+  const container=document.getElementById('sex-cards');
+  if(!container)return;
+  container.innerHTML='';
+  const makeCard=(countKey,boolKey,timeKey,label,emoji,color,logLabel)=>{
+    const count=state[countKey]||0;
+    const t=state[timeKey];
+    const div=document.createElement('div');
+    div.style.cssText=`background:rgba(${color},.05);border:1.5px solid rgba(${color},${count>0?0.4:.15});border-radius:16px;padding:16px;margin-bottom:12px`;
+    div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${count>0?'12':'0'}px"><div><div style="font-size:15px;font-weight:bold;color:rgba(${color},1)">${emoji} ${label}</div><div style="font-size:10px;color:rgba(${color},.6);margin-top:3px">${count>0?count+' time'+(count>1?'s':'')+' today'+(t?' · last '+t:''):'Not logged today'}</div></div><div style="font-size:28px;font-weight:bold;color:rgba(${color},${count>0?1:.4})">${count}</div></div><div style="display:flex;gap:8px"><button data-sexkey="${countKey}" data-sexbool="${boolKey}" data-sextime="${timeKey}" data-sexlbl="${logLabel}" data-sexcolor="${color}" data-sexact="plus" style="flex:1;padding:11px;border-radius:11px;font-size:13px;font-weight:bold;border:1.5px solid rgba(${color},.45);background:rgba(${color},.18);color:rgba(${color},1);cursor:pointer">+ Log ${label}</button>${count>0?'<button data-sexkey="'+countKey+'" data-sexbool="'+boolKey+'" data-sextime="'+timeKey+'" data-sexcolor="'+color+'" data-sexact="minus" style="padding:11px 16px;border-radius:11px;font-size:13px;border:1px solid rgba('+color+',.28);background:rgba('+color+',.07);color:rgba('+color+',.7);cursor:pointer">−</button>':''}</div>`;
+    container.appendChild(div);
+  };
+  makeCard('sexActivityCount','sexActivity','sexActivityTime','Sexual Activity','❤️‍🔥','239,68,68','❤️ Sexual activity');
+  makeCard('sexMasturbationCount','sexMasturbation','sexMasturbationTime','Masturbation','💆','167,139,250','💆 Masturbation');
+  container.querySelectorAll('button[data-sexkey]').forEach(b=>{
+    b.onclick=()=>{
+      const ck=b.dataset.sexkey;const bk=b.dataset.sexbool;const tk=b.dataset.sextime;
+      const act=b.dataset.sexact;
+      if(act==='plus'){
+        state[ck]=(state[ck]||0)+1;
+        state[bk]=true;
+        state[tk]=new Date().toTimeString().slice(0,5);
+        const lbl=b.dataset.sexlbl;
+        pushEventLog('sexLog',{label:lbl,countKey:ck});
+      } else {
+        state[ck]=Math.max(0,(state[ck]||0)-1);
+        if(state[ck]===0){state[bk]=false;state[tk]='';}
+      }
+      saveAll();renderSex();
+    };
+  });
+  container.querySelectorAll('input[data-sextinput]').forEach(inp=>{
+    inp.onchange=()=>{state[inp.dataset.sextinput]=inp.value;saveAll();};
+  });
+}
+function renderDrinks(){
+  const s=getS();
+  const h=now().getHours(),mins=now().getMinutes();
+  const pastCutRaw=h>=20,minsLeft=pastCutRaw?0:(20-h)*60-mins;
+  const pastCut=pastCutRaw&&!state.drinkOverride;
+  const blocked=pastCut||state.sessionDrinks>=4||state.weekDrinks>=10;
+  const banner=document.getElementById('drink-cutoff-banner');
+  if(pastCutRaw&&!state.drinkOverride)banner.innerHTML=`<div class="warning-banner" style="background:rgba(239,83,80,.12);border:1.5px solid rgba(239,83,80,.4)"><div style="font-size:14px;color:#ef5350;font-weight:bold">⏰ 8pm cutoff reached</div><button id="drink-override-btn" style="margin-top:8px;font-size:10px;color:#ef9090;background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.4);border-radius:7px;padding:5px 12px;cursor:pointer">⚠️ Override</button></div>`;
+  else if(pastCutRaw&&state.drinkOverride)banner.innerHTML=`<div class="warning-banner" style="background:rgba(251,191,36,.1);border:1.5px solid rgba(251,191,36,.4)"><div style="font-size:13px;color:#fbbf24;font-weight:bold">⚠️ Override active</div><button id="drink-override-cancel" style="margin-top:6px;font-size:10px;color:#9a7a30;background:none;border:1px solid rgba(251,191,36,.3);border-radius:7px;padding:4px 10px;cursor:pointer">Cancel</button></div>`;
+  else if(minsLeft<=120)banner.innerHTML=`<div class="warning-banner" style="background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35)"><div style="font-size:12px;color:#fbbf24">⚠️ 8pm cutoff in ${Math.floor(minsLeft/60)}h ${minsLeft%60}m</div></div>`;
+  else banner.innerHTML='';
+  const sc2=document.getElementById('session-card');
+  sc2.style.background=state.sessionDrinks>=4?'rgba(239,83,80,.1)':'rgba(244,114,182,.07)';
+  sc2.style.border=`1.5px solid rgba(244,114,182,${state.sessionDrinks>=4?0.5:.25})`;
+  document.getElementById('session-count').textContent=fmt05(s.sessionDrinks||0);
+  document.getElementById('session-count').style.color=state.sessionDrinks>=4?'#ef5350':'#f472b6';
+  const dots=document.getElementById('drink-dots');
+  dots.innerHTML=Array.from({length:4},(_,i)=>`<div class="drink-dot" style="background:${i<state.sessionDrinks?(state.sessionDrinks>=4?'#ef5350':'#f472b6'):'rgba(244,114,182,.12)'}"></div>`).join('');
+  const d1=document.getElementById('drink-1'),d15=document.getElementById('drink-15');
+  [d1,d15].forEach(b=>{b.style.border='1px solid rgba(244,114,182,'+(blocked?0.15:.5)+')';b.style.background='rgba(244,114,182,'+(blocked?0.04:.18)+')';b.style.color=blocked?'#5a3a4a':'#f472b6';b.style.cursor=blocked?'not-allowed':'pointer';});
+  if(blocked){d1.innerHTML=pastCut?'Cutoff':'Limit';d15.innerHTML=pastCut?'':'-';}
+  else{d1.innerHTML='+ 1 std<br><span style="font-size:10px;font-weight:normal">+250ml 💧</span>';d15.innerHTML='+ 1.5 std<br><span style="font-size:10px;font-weight:normal">+375ml 💧</span>';}
+  const wkLeft=Math.max(10-state.weekDrinks,0);
+  document.getElementById('week-count').innerHTML=`${fmt05(s.weekDrinks||0)} <span style="font-size:12px;color:#7a4a6a">/ 10</span>`;
+  document.getElementById('week-count').style.color=state.weekDrinks>=10?'#ef5350':'#f472b6';
+  document.getElementById('week-bar').style.width=Math.min((state.weekDrinks/10)*100,100)+'%';
+  document.getElementById('week-bar').style.background=state.weekDrinks>=10?'#ef5350':'#f472b6';
+  document.getElementById('week-remaining').textContent=wkLeft>0?`${fmt05(wkLeft)} drink${wkLeft!==1?'s':''} remaining this week`:'Weekly limit hit 💪';
+  const fracs=['0','¼','½','¾','1','1¼','1½','1¾','2','2¼','2½','2¾','3'];
+  const eEl=document.getElementById('mj-edible-count');const eFEl=document.getElementById('mj-edible-fraction');
+  const vEl=document.getElementById('mj-vape-count');const tEl=document.getElementById('mj-time');
+  if(eEl)eEl.textContent=state.mjEdible;
+  if(eFEl)eFEl.textContent=fracs[Math.min(state.mjEdible,fracs.length-1)]||state.mjEdible+'×¼';
+  if(vEl)vEl.textContent=state.mjVape;
+  if(tEl)tEl.textContent=state.lastMJTime?'Last: '+state.lastMJTime:'';
+}
+function renderSmokes(){
+  const s=getS();
+  // Streak calculation
+  const quitDate=new Date(state.cigQuitDate);
+  const now=new Date();
+  const streakDays=Math.max(0,Math.floor((now-quitDate)/86400000));
+  const streakHours=Math.max(0,Math.floor((now-quitDate)/3600000));
+  const relapseCount=state.cigRelapseCount||0;
+  const todayHadSmoke=state.cigs>0;
+  const moneySaved=streakDays*15; // ~$15/day pack cost AUD
+
+  // Update header
+  document.getElementById('cig-week-lbl').textContent='🚭 SMOKE-FREE GOAL · You quit end of April';
+  const gd=document.getElementById('cig-goal-display');
+  if(todayHadSmoke){
+    gd.innerHTML='<div style="font-size:18px;font-weight:bold;color:#ef5350">⚠️ Relapsed today</div><div style="font-size:11px;color:#9a4a48;margin-top:3px">Streak reset · Get back on track tomorrow</div>';
+  } else if(streakDays===0){
+    gd.innerHTML='<div style="font-size:22px;font-weight:bold;color:#fbbf24">Day 1 — Today</div><div style="font-size:11px;color:#9a7830;margin-top:3px">First 24 hours are the hardest</div>';
+  } else {
+    gd.innerHTML='<div style="font-size:32px;font-weight:bold;color:#00e5a0">'+streakDays+' day'+(streakDays!==1?'s':'')+' 🌟</div><div style="font-size:11px;color:#2a6a4a;margin-top:3px">smoke-free · ~$'+moneySaved+' saved</div>';
+  }
+
+  // Update card style based on state
+  const card=document.getElementById('cig-card');
+  if(todayHadSmoke){
+    card.style.background='rgba(239,83,80,.15)';
+    card.style.border='2px solid rgba(239,83,80,.5)';
+  } else if(streakDays>=7){
+    card.style.background='rgba(0,229,160,.08)';
+    card.style.border='1.5px solid rgba(0,229,160,.4)';
+  } else {
+    card.style.background='rgba(251,191,36,.08)';
+    card.style.border='1.5px solid rgba(251,191,36,.3)';
+  }
+
+  // Title
+  const title=document.getElementById('cig-title');
+  if(todayHadSmoke){title.textContent='⚠️ Smoke logged today';title.style.color='#ef5350';}
+  else if(streakDays>=30){title.textContent='Smoke-free 💪';title.style.color='#00e5a0';}
+  else if(streakDays>=7){title.textContent='Building the streak 🌱';title.style.color='#00e5a0';}
+  else{title.textContent='Early days — stay strong';title.style.color='#fbbf24';}
+
+  document.getElementById('cig-subtitle').textContent=todayHadSmoke?'Tomorrow is a new day. The streak rebuilds.':'Goal: 0 cigarettes. Forever.';
+
+  // Today's count display
+  document.getElementById('cig-count').textContent=fmt05(s.cigs||0);
+  document.getElementById('cig-count').style.color=todayHadSmoke?'#ef5350':'#00e5a0';
+  document.getElementById('cig-target-lbl').textContent='/ 0 target';
+
+  // Hide the daily progress bar — irrelevant now
+  document.getElementById('cig-bar-wrap').style.display='none';
+
+  document.getElementById('cig-minus').disabled=state.cigs===0;
+  document.getElementById('cig-minus').style.color=state.cigs===0?'#4a3a10':'#fbbf24';
+
+  // Replace the "Log Half Cig" button with a more confronting label
+  const plusBtn=document.getElementById('cig-plus');
+  plusBtn.innerHTML='⚠️ Log Relapse';
+  plusBtn.style.background='rgba(239,83,80,.15)';
+  plusBtn.style.border='1px solid rgba(239,83,80,.45)';
+  plusBtn.style.color='#ef5350';
+
+  // Replace the roadmap area with milestones
+  const rm=document.getElementById('cig-roadmap');
+  const milestones=[
+    {d:1,lbl:'Day 1',emoji:'💪'},
+    {d:3,lbl:'Day 3',emoji:'🌱'},
+    {d:7,lbl:'Week 1',emoji:'🌿'},
+    {d:30,lbl:'Month 1',emoji:'🌳'},
+    {d:90,lbl:'3 mo',emoji:'🏆'},
+  ];
+  rm.style.gridTemplateColumns='repeat(5,1fr)';
+  rm.innerHTML=milestones.map(m=>{
+    const hit=streakDays>=m.d;
+    const current=streakDays<m.d&&(milestones[milestones.indexOf(m)-1]?streakDays>=milestones[milestones.indexOf(m)-1].d:streakDays<m.d);
+    return '<div class="cig-cell"><div class="cig-box" style="background:'+(hit?'rgba(0,229,160,.2)':current?'rgba(251,191,36,.2)':'rgba(255,255,255,.03)')+';border:1px solid '+(hit?'rgba(0,229,160,.5)':current?'rgba(251,191,36,.4)':'rgba(255,255,255,.07)')+';color:'+(hit?'#00e5a0':current?'#fbbf24':'#3a4a5a')+';font-size:14px">'+(hit?'✓':m.emoji)+'</div><div class="cig-wlbl" style="color:'+(hit?'#2a6a4a':'#3a4a5a')+'">'+m.lbl+'</div></div>';
+  }).join('');
+
+  // Bottom info: relapse count and quit date
+  const startLbl=document.getElementById('cig-start-lbl');
+  const quitDateStr=new Date(state.cigQuitDate).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+  startLbl.innerHTML='<div>Quit date: '+quitDateStr+'</div><div style="font-size:10px;color:'+(relapseCount>0?'#ef9090':'#3a5a6a')+';margin-top:2px">Relapses: '+relapseCount+(state.cigLastRelapseDate?' · last '+new Date(state.cigLastRelapseDate).toLocaleDateString('en-AU',{day:'numeric',month:'short'}):'')+'</div>';
+
+  // Update restart button label
+  const restartBtn=document.getElementById('cig-restart');
+  if(restartBtn)restartBtn.textContent='Reset Streak';
+}
+
+function saveSnapshot(){
+  // CRITICAL: skip in edit mode — saveAll handles writing to the editing day's snap directly.
+  // Without this guard, saveSnapshot would overwrite TODAY's snapshot with the editing day's data.
+  if(state.__editing)return;
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
+  const targetWater=dt.target+(state.sessionDrinks*250);
+  const snap={date:today,dateLabel:new Date().toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}),water:state.water,waterTarget:targetWater,dayTypeId:state.dayTypeId,dayType:dt.label,sessionDrinks:state.sessionDrinks,weekDrinks:state.weekDrinks,drinks:state.sessionDrinks,lastDrinkTime:state.lastDrinkTime,mjEdible:state.mjEdible,mjVape:state.mjVape,lastMJTime:state.lastMJTime,cigs:state.cigs,lastSmokeTime:state.lastSmokeTime,caffMg:state.caffLog.reduce((a,e)=>a+e.mg,0),lastCaffTime:state.caffLog.length?state.caffLog[state.caffLog.length-1].time:'',seeking:state.seeking,bulk:state.bulk,salts:state.salts,suppOmega:state.suppOmega,suppTheanineAM:state.suppTheanineAM,suppTheaninePM:state.suppTheaninePM,suppVitB:state.suppVitB,suppCreatine:state.suppCreatine,suppMag:state.suppMag,suppFinasteride:state.suppFinasteride,supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag,state.suppFinasteride,state.suppD3k2,state.suppGlycineAM,state.suppGlycinePM].filter(Boolean).length,oralBrushAM:state.oralBrushAM,oralMouthwashAM:state.oralMouthwashAM,oralFlossPM:state.oralFlossPM,oralPickstersPM:state.oralPickstersPM,oralBrushPM:state.oralBrushPM,oralMouthwashPM:state.oralMouthwashPM,habitMeditation:state.habitMeditation,lastMedTime:state.lastMedTime,habitPliability:state.habitPliability,lastStretchTime:state.lastStretchTime,habitStrengthMins:state.habitStrengthMins,habitZone13Mins:state.habitZone13Mins,habitZone45Mins:state.habitZone45Mins,bodyWeight:state.bodyWeight,bodyFatPct:state.bodyFatPct,bodyCalDeficit:state.bodyCalDeficit,bodyProtein:state.bodyProtein,bodyCarbs:state.bodyCarbs,bodyFat:state.bodyFat,bodyFibre:state.bodyFibre,dailySteps:state.dailySteps,screenTimeMins:state.screenTimeMins,suppK:(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200),suppNa:(state.seeking*150)+(state.bulk*113)+(state.salts*1014),suppMg:(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(state.suppMag?150:0)};
+  try{localStorage.setItem('snap_'+today,JSON.stringify(snap));}catch{}
+}
+function renderHistory(){
+  const list=document.getElementById('history-list');
+  const entries=[];
+  for(let i=0;i<35;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=d.toDateString();
+    if(key===today){
+      const dt=DAY_TYPES.find(x=>x.id===state.dayTypeId)||DAY_TYPES[0];
+      const targetWater=dt.target+(state.sessionDrinks*250);
+      entries.push({dateLabel:'Today',water:state.water,waterTarget:targetWater,dayType:dt.label,drinks:state.sessionDrinks,cigs:state.cigs,caffMg:state.caffLog.reduce((a,e)=>a+e.mg,0),supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag,state.suppFinasteride,state.suppD3k2,state.suppGlycineAM,state.suppGlycinePM].filter(Boolean).length,dailySteps:state.dailySteps,screenTimeMins:state.screenTimeMins,suppK:(state.seeking*500)+Math.round(state.bulk*139.5)+(state.salts*200),suppNa:(state.seeking*150)+(state.bulk*113)+(state.salts*1014),suppMg:(state.seeking*125)+(state.bulk*127)+(state.salts*60)+(state.suppMag?150:0),isToday:true});
+    } else {
+      try{const v=localStorage.getItem('snap_'+key);if(v)entries.push({...JSON.parse(v),isToday:false});}catch{}
+    }
+  }
+  if(entries.length===0){list.innerHTML='<div style="text-align:center;color:#2a4a5a;padding:30px;font-size:13px">No history yet — check back tomorrow!</div>';return;}
+  list.innerHTML=entries.map(e=>{
+    const wpct=Math.min(Math.round((e.water/e.waterTarget)*100),100);
+    const wcolor=wpct>=100?'#00e5a0':wpct>=60?'#4fc3f7':wpct>=30?'#ffd54f':'#ef5350';
+    var isViewing=viewState&&viewState.date===e.date;
+    const clickable=!e.isToday;
+    return `<div ${clickable?'data-snapdate="'+e.date+'"':''} style="background:${e.isToday?'rgba(255,255,255,.03)':'rgba(255,255,255,.02)'};border:1px solid ${e.isToday?'rgba(79,195,247,.3)':'rgba(255,255,255,.07)'};border-radius:14px;padding:14px;margin-bottom:10px;${clickable?'cursor:pointer':''}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:14px;font-weight:bold;color:${e.isToday?'#4fc3f7':'#e0f0ff'}">${e.isToday?'Today (live)':e.dateLabel+' · ✏️'}</div><div style="font-size:10px;color:#4a7a9b;margin-top:1px">${e.dayType}</div></div><div style="font-size:11px;font-weight:bold;color:${wcolor}">${wpct}% hydrated</div></div><div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;margin-bottom:10px"><div style="height:100%;width:${wpct}%;background:${wcolor};border-radius:3px"></div></div><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px"><div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4fc3f7">${fml(e.water)}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Water</div></div><div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#f472b6">${fmt05(e.drinks)}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Drinks</div></div><div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4ade80">${e.caffMg}mg</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Caffeine</div></div><div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#818cf8">${e.supps}/10</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Supps</div></div><div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:#4ade80">${(e.dailySteps||0).toLocaleString()}</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Steps</div></div><div style="text-align:center"><div style="font-size:12px;font-weight:bold;color:${(e.screenTimeMins||0)>30?'#ef5350':'#4ade80'}">${e.screenTimeMins||0}m</div><div style="font-size:8px;color:#2a4a5a;text-transform:uppercase;margin-top:1px">Screen</div></div></div><div style="font-size:10px;color:${e.cigs>0?'#fbbf24':'#2a4a5a'};margin-top:6px;text-align:center">🚬 ${e.cigs>0?fmt05(e.cigs)+' smoked':'No smokes'}</div></div>`;
+  }).join('');
+}
+function renderScreenTime(){
+  const s=getS();
+  const container=document.getElementById('screentime-cards');
+  if(!container)return;
+  container.innerHTML='';
+  const goal=30;
+  const mins=s.screenTimeMins||0;
+  const over=mins>goal;
+  const pct=Math.min((mins/goal)*100,100);
+  const color=mins===0?'#4fc3f7':mins<=goal?'#4ade80':mins<=60?'#fbbf24':'#ef5350';
+  const statusMsg=mins===0?'Not logged yet':mins<=30?'Within goal':mins<=60?'Over goal':'High usage';
+  const hdr=document.createElement('div');
+  hdr.style.cssText='background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.18);border-radius:12px;padding:9px 13px;margin-bottom:16px;font-size:11px;color:#6ea8d0;text-align:center;font-style:italic';
+  hdr.textContent='30 min/day goal · protect dopamine baseline & presence with family';
+  container.appendChild(hdr);
+  const card=document.createElement('div');
+  card.style.cssText='background:'+(over?'rgba(239,83,80,.08)':'rgba(74,222,128,.05)')+';border:1.5px solid '+(over?'rgba(239,83,80,.4)':'rgba(74,222,128,.2)')+';border-radius:16px;padding:16px;margin-bottom:12px';
+  card.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:15px;font-weight:bold;color:'+color+'">📱 Social Media Today</div><div style="font-size:10px;color:#2a5a3a;margin-top:1px">Goal: 30 min · set via Brick Blocker</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:'+color+'">'+mins+'<span style="font-size:12px">m</span></div><div style="font-size:9px;color:#3a5a4a">of 30m goal</div></div></div><div style="height:10px;background:rgba(255,255,255,.06);border-radius:5px;margin-bottom:8px"><div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:5px;transition:width .4s"></div></div><div style="font-size:11px;color:'+color+';text-align:center;margin-bottom:12px">'+statusMsg+'</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"><button data-sm="10" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+10m</button><button data-sm="30" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+30m</button><button data-sm="60" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:#fbbf24;cursor:pointer">+1h</button><button data-sm="-15" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(239,83,80,.28);background:rgba(239,83,80,.07);color:#ef9090;cursor:pointer">-15m</button></div>';
+  container.appendChild(card);
+  card.querySelectorAll('button[data-sm]').forEach(b=>{
+    b.onclick=()=>{state.screenTimeMins=Math.max(0,state.screenTimeMins+parseInt(b.dataset.sm));saveAll();try{renderScreenTime();}catch(err){console.error("ScreenTime failed:",err.message);}};
+  });
+  const sci=document.createElement('div');
+  sci.style.cssText='background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  sci.innerHTML='<div style="font-size:12px;font-weight:bold;color:#4fc3f7;margin-bottom:8px">Why 30 min? 🧠</div><div style="font-size:11px;color:#3a6a7a;line-height:1.7"><div style="margin-bottom:5px">• <span style="color:#b0d0e8">Dopamine baseline:</span> Passive scrolling recalibrates reward thresholds upward — real life feels less satisfying.</div><div style="margin-bottom:5px">• <span style="color:#b0d0e8">Cortisol spikes:</span> Notifications trigger micro stress responses that accumulate and disrupt sleep architecture.</div><div style="margin-bottom:5px">• <span style="color:#b0d0e8">Presence cost:</span> Each phone interruption takes 20+ min to regain deep focus. With family the cost is felt, not measured.</div><div>• <span style="color:#b0d0e8">The threshold:</span> Under 30m/day = negligible wellbeing impact. Over 2h/day = measurable reduction in life satisfaction.</div></div>';
+  container.appendChild(sci);
+  const brick=document.createElement('div');
+  brick.style.cssText='background:rgba(129,140,248,.04);border:1px solid rgba(129,140,248,.18);border-radius:12px;padding:11px 14px;margin-bottom:12px';
+  brick.innerHTML='<div style="font-size:11px;font-weight:bold;color:#818cf8;margin-bottom:4px">🧱 Brick Blocker tip</div><div style="font-size:10px;color:#3a3a7a;line-height:1.6">Set your limit to 30 min on Instagram & similar. Make it hard to override — the friction is the feature. Morning and pre-bed windows matter most for sleep and recovery.</div>';
+  container.appendChild(brick);
+  const intent=document.createElement('div');
+  intent.style.cssText='background:rgba(167,139,250,.04);border:1px solid rgba(167,139,250,.18);border-radius:12px;padding:11px 14px';
+  intent.innerHTML='<div style="font-size:11px;font-weight:bold;color:#a78bfa;margin-bottom:4px">Decade intention ✨</div><div style="font-size:10px;color:#4a3a7a;line-height:1.6">Present with family. Focused at work. Smoke-free. Pace of aging trending down. This limit compounds every day.</div>';
+  container.appendChild(intent);
+}
+function renderOral(){
+  const amItems=[{key:'oralBrushAM',emoji:'🪥',label:'Brush Teeth',dose:'2 min · 3 sec/tooth',tip:'Fluoride toothpaste'},{key:'oralMouthwashAM',emoji:'💧',label:'Mouthwash',dose:'30 sec swish',tip:'Spit, don\'t rinse'}];
+  const pmItems=[{key:'oralFlossPM',emoji:'🧵',label:'Floss',dose:'All gaps',tip:'Floss first'},{key:'oralPickstersPM',emoji:'🦯',label:'Picksters',dose:'Interdental',tip:'After flossing'},{key:'oralBrushPM',emoji:'🪥',label:'Brush Teeth',dose:'2 min',tip:'After flossing'},{key:'oralMouthwashPM',emoji:'💧',label:'Mouthwash',dose:'30 sec',tip:'Don\'t eat after'}];
+  const amDone=amItems.filter(i=>state[i.key]).length;
+  const pmDone=pmItems.filter(i=>state[i.key]).length;
+  const totalDone=amDone+pmDone;
+  const totalItems=amItems.length+pmItems.length;
+  const allDone=totalDone===totalItems;
+  const container=document.getElementById('oral-cards');
+  container.innerHTML='';
+  const hdr=document.createElement('div');
+  hdr.style.cssText='border-radius:14px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;background:'+(allDone?'rgba(56,189,248,.12)':'rgba(56,189,248,.06)')+';border:1.5px solid rgba(56,189,248,'+(allDone?0.45:.2)+')';
+  hdr.innerHTML='<div><div style="font-size:14px;font-weight:bold;color:#38bdf8">'+(allDone?'Mouth done! 🦷':'Oral Hygiene')+'</div><div style="font-size:10px;color:#2a5a6a;margin-top:2px">Tap each when done</div></div><div style="font-size:26px;font-weight:bold;color:'+(allDone?'#00e5a0':'#38bdf8')+'">'+totalDone+'<span style="font-size:13px;color:#2a5a6a">/'+totalItems+'</span></div>';
+  container.appendChild(hdr);
+  function makeSection(title,emoji,items,done,total){
+    const sec=document.createElement('div');
+    sec.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+    sec.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:bold;color:#38bdf8">'+emoji+' '+title+'</div><div style="font-size:11px;color:'+(done===total?'#00e5a0':'#4a7a9b')+'">'+done+'/'+total+'</div></div>';
+    items.forEach(it=>{
+      const taken=state[it.key];
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)';
+      row.innerHTML='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">'+it.emoji+'</span><div><div style="font-size:13px;font-weight:bold;color:rgba(56,189,248,'+(taken?1:.7)+')">'+(taken?'✓ ':'')+it.label+'</div><div style="font-size:10px;color:#2a5a6a;margin-top:1px">'+it.dose+'</div></div></div></div><button data-okey="'+it.key+'" style="width:40px;height:40px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;border:1.5px solid rgba(56,189,248,'+(taken?0.6:.3)+');background:'+(taken?'rgba(56,189,248,.25)':'rgba(56,189,248,.07)')+';color:#38bdf8;cursor:pointer">'+(taken?'✓':'○')+'</button>';
+      sec.appendChild(row);
+    });
+    return sec;
+  }
+  container.appendChild(makeSection('Morning Routine','☀️',amItems,amDone,amItems.length));
+  container.appendChild(makeSection('Evening Routine','🌙',pmItems,pmDone,pmItems.length));
+  container.querySelectorAll('button[data-okey]').forEach(b=>{
+    b.onclick=()=>{const k=b.dataset.okey;state[k]=!state[k];if(state[k]){const labels={oralBrushAM:'🪥 Brush AM',oralMouthwashAM:'💧 Mouthwash AM',oralFlossPM:'🧵 Floss PM',oralPickstersPM:'🦯 Picksters PM',oralBrushPM:'🪥 Brush PM',oralMouthwashPM:'💧 Mouthwash PM'};pushEventLog('oralLog',{label:labels[k]||k,key:k});}saveAll();renderOral();};
+  });
+}
+
+const WEEKLY_GOALS={strength:150,zone13:150,zone45:50};
+const SESSION_MINS={strength:40,zone13:60,zone45:5};
+function renderHabits(){
+  const s=getS();
+  const container=document.getElementById('habits-cards');
+  if(!container)return;
+  container.innerHTML='';
+  const stepsGoal=12000;
+  const stepsPct=Math.min(((s.dailySteps||0)/stepsGoal)*100,100);
+  const stepsColor=state.dailySteps>=stepsGoal?'#00e5a0':state.dailySteps>=7500?'#4ade80':state.dailySteps>=5000?'#fbbf24':'#fb923c';
+  const stepsCard=document.createElement('div');
+  stepsCard.style.cssText='background:rgba(74,222,128,.05);border:1.5px solid rgba(74,222,128,'+((s.dailySteps||0)>=stepsGoal?0.45:.2)+');border-radius:16px;padding:16px;margin-bottom:12px';
+  stepsCard.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:14px;font-weight:bold;color:#4ade80">🚶 Daily Steps</div><div style="font-size:10px;color:#2a5a3a;margin-top:1px">Goal: 12,000</div></div><div style="text-align:right"><div style="font-size:22px;font-weight:bold;color:${stepsColor}">${state.dailySteps.toLocaleString()}</div><div style="font-size:9px;color:#2a4a3a">${state.dailySteps>=stepsGoal?'✓ Goal reached!':((stepsGoal-state.dailySteps).toLocaleString()+' to go')}</div></div></div><div style="height:8px;background:rgba(74,222,128,.1);border-radius:4px;margin-bottom:12px"><div style="height:100%;width:${stepsPct}%;background:${stepsColor};border-radius:4px"></div></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"><button data-steps="1000" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+1K</button><button data-steps="2000" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+2K</button><button data-steps="5000" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.1);color:#4ade80;cursor:pointer">+5K</button><button data-steps="-1000" style="padding:8px 4px;border-radius:9px;font-size:11px;font-weight:bold;border:1px solid rgba(239,83,80,.28);background:rgba(239,83,80,.07);color:#ef9090;cursor:pointer">−1K</button></div>`;
+  container.appendChild(stepsCard);
+  stepsCard.querySelectorAll('button[data-steps]').forEach(b=>{
+    b.onclick=()=>{if(viewState)return;state.dailySteps=Math.max(0,state.dailySteps+parseInt(b.dataset.steps));saveAll();renderHabits();};
+  });
+  const dailyItems=[{key:'habitMeditation',emoji:'🧘',label:'Waking Up',sub:'Meditation',color:'167,139,250'},{key:'habitPliability',emoji:'🤸',label:'Pliability',sub:'Mobility & stretching',color:'52,211,153'}];
+  const dailySec=document.createElement('div');
+  dailySec.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  dailySec.innerHTML='<div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">Daily Habits</div>';
+  dailyItems.forEach(it=>{
+    const taken=state[it.key];
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)';
+    row.innerHTML='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+it.emoji+'</span><div><div style="font-size:13px;font-weight:bold;color:rgba('+it.color+',1)">'+(taken?'✓ ':'')+it.label+'</div><div style="font-size:10px;color:#3a5a6a;margin-top:1px">'+it.sub+'</div></div></div></div><button data-hkey="'+it.key+'" style="width:40px;height:40px;border-radius:11px;font-size:18px;border:1.5px solid rgba('+it.color+','+(taken?0.6:.3)+');background:'+(taken?'rgba('+it.color+',.25)':'rgba('+it.color+',.07)')+';color:rgba('+it.color+',1);cursor:pointer">'+(taken?'✓':'○')+'</button>';
+    dailySec.appendChild(row);
+  });
+  container.appendChild(dailySec);
+  const trainItems=[{key:'strength',emoji:'🏋️',label:'Strength Training',sub:'Goal: 2h 30m / week',color:'251,146,60'},{key:'zone13',emoji:'🚶',label:'Zone 1-3 Cardio',sub:'Goal: 2h 30m / week',color:'74,222,128'},{key:'zone45',emoji:'🔥',label:'Zone 4-5 Cardio',sub:'Goal: 50 min / week',color:'239,83,80'}];
+  const trainSec=document.createElement('div');
+  trainSec.style.cssText='background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px';
+  trainSec.innerHTML='<div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px">Weekly Training</div>';
+  trainItems.forEach(it=>{
+    const mins=state['habit'+it.key.charAt(0).toUpperCase()+it.key.slice(1)+'Mins'];
+    const goal=WEEKLY_GOALS[it.key];
+    const sessionMins=SESSION_MINS[it.key];
+    const pct=Math.min((mins/goal)*100,100);
+    const done=mins>=goal;
+    const h=Math.floor(mins/60),m=mins%60;
+    const gh=Math.floor(goal/60),gm=goal%60;
+    const timeStr=h>0?(h+'h '+(m>0?m+'m':'')):(m+'m');
+    const goalStr=gh>0?(gh+'h '+(gm>0?gm+'m':'')):(gm+'m');
+    const barColor=done?'#00e5a0':('rgba('+it.color+',1)');
+    const block=document.createElement('div');
+    block.style.cssText='padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)';
+    block.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:16px">${it.emoji}</span><span style="font-size:13px;font-weight:bold;color:rgba(${it.color},1)">${it.label}</span>${done?'<span style="font-size:9px;color:#00e5a0">✓ Goal!</span>':''}</div><div style="font-size:10px;color:#3a5a6a;margin-top:2px;padding-left:22px">${it.sub}</div></div><div style="text-align:right;flex-shrink:0;margin-left:8px"><div style="font-size:14px;font-weight:bold;color:${done?'#00e5a0':('rgba('+it.color+',1)')}">${timeStr}</div><div style="font-size:9px;color:#2a4a5a">of ${goalStr}</div></div></div><div style="height:7px;background:rgba(${it.color},.1);border-radius:4px;margin-bottom:8px"><div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px"></div></div><div style="display:flex;gap:8px"><button data-train="${it.key}" data-act="minus" style="padding:8px 12px;border-radius:10px;font-size:18px;border:1px solid rgba(${it.color},.28);background:rgba(${it.color},.07);color:rgba(${it.color},1);cursor:pointer">−</button><button data-train="${it.key}" data-act="plus" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:bold;border:1px solid rgba(${it.color},.45);background:rgba(${it.color},.16);color:rgba(${it.color},1);cursor:pointer">+ Log ${sessionMins}min session</button></div>`;
+    trainSec.appendChild(block);
+  });
+  container.appendChild(trainSec);
+  container.querySelectorAll('button[data-hkey]').forEach(b=>{
+    b.onclick=()=>{
+      const k=b.dataset.hkey;state[k]=!state[k];
+      if(k==='habitMeditation'){state.lastMedTime=state[k]?new Date().toTimeString().slice(0,5):'';if(state[k])pushEventLog('habitsLog',{label:'🧘 Meditation',kind:'meditation'});}
+      if(k==='habitPliability'){state.lastStretchTime=state[k]?new Date().toTimeString().slice(0,5):'';if(state[k])pushEventLog('habitsLog',{label:'🤸 Pliability/Stretch',kind:'stretch'});}
+      saveAll();renderHabits();
+    };
+  });
+  container.querySelectorAll('button[data-train]').forEach(b=>{
+    b.onclick=()=>{
+      const k='habit'+b.dataset.train.charAt(0).toUpperCase()+b.dataset.train.slice(1)+'Mins';
+      const sm=SESSION_MINS[b.dataset.train];
+      if(b.dataset.act==='plus'){state[k]=state[k]+sm;const labels={strength:'🏋️ Strength session',zone13:'🚶 Zone 1-3 cardio',zone45:'🔥 Zone 4-5 HIIT'};pushEventLog('habitsLog',{label:labels[b.dataset.train]+' (+'+sm+'min)',kind:'training',mins:sm});}
+      else state[k]=Math.max(0,state[k]-sm);
+      saveAll();try{renderHabits();}catch(err){console.error("Habits failed:",err.message);}
+    };
+  });
+}
+const DEXA_TARGET_BF=13;
+const DEXA_TARGET_DATE=new Date('2026-05-01');
+const HUME_WEIGHT_OFFSET=-2.35;
+const HUME_BF_OFFSET=3.0;
+// Calibrated from Apr 24, 2026 same-day Hume (07:26) vs DEXA (15:00) at MeasureUp.
+// Offsets have widened from Nov 2025 (-1.6 / +2.2) — BIA error grows at lower body fat.
+// Use Hume for daily trend direction; DEXA quarterly for ground truth.
+function calcDexaAdjusted(humeWeight,humeBf){
+  if(!humeWeight||!humeBf)return null;
+  const dexaWeight=Math.round((humeWeight+HUME_WEIGHT_OFFSET)*10)/10;
+  const dexaBf=Math.min(50,Math.round((humeBf+HUME_BF_OFFSET)*10)/10);
+  const fat=Math.round(dexaWeight*(dexaBf/100)*10)/10;
+  const lean=Math.round((dexaWeight-fat)*10)/10;
+  return {weight:dexaWeight,lean,fat,bf:dexaBf};
+}
+function renderBody(){
+  const s=getS();
+  const container=document.getElementById('body-cards');
+  if(!container)return;
+  container.innerHTML='';
+  const w=s.bodyWeight;
+  const bf=s.bodyFatPct;
+  const adj=w&&bf?calcDexaAdjusted(w,bf):null;
+  const lbs=w?(w*2.2046).toFixed(1):0;
+  const proteinGoal=w?Math.round(w*2.2046):0;
+  const fibreGoal=45;
+  const todayDate=new Date();
+  const daysLeft=Math.max(0,Math.ceil((DEXA_TARGET_DATE-todayDate)/(1000*60*60*24)));
+  let progressHTML='';
+  if(adj){
+    const currentDexaBf=adj.bf;
+    const currentLean=adj.lean;
+    const targetWeight=Math.round(currentLean/(1-DEXA_TARGET_BF/100)*10)/10;
+    const fatToLose=Math.max(0,(adj.weight-targetWeight)).toFixed(1);
+    const bfGap=(currentDexaBf-DEXA_TARGET_BF).toFixed(1);
+    const onTrack=currentDexaBf<=18;
+    const pct=Math.max(0,Math.min(100,Math.round(((21-currentDexaBf)/(21-DEXA_TARGET_BF))*100)));
+    progressHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px"><div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px">May 1 DEXA Goal · ${daysLeft} days away</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><div style="font-size:13px;font-weight:bold;color:${onTrack?'#4ade80':'#fbbf24'}">DEXA BF: ${currentDexaBf}%</div><div style="font-size:10px;color:#3a5a4a;margin-top:1px">Target: ${DEXA_TARGET_BF}% · Gap: ${bfGap}%</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:bold;color:#fb923c">-${fatToLose}kg fat</div><div style="font-size:10px;color:#5a3a1a;margin-top:1px">still to lose</div></div></div><div style="height:8px;background:rgba(74,222,128,.1);border-radius:4px;margin-bottom:6px"><div style="height:100%;width:${pct}%;background:${onTrack?'#4ade80':'#fbbf24'};border-radius:4px"></div></div></div>`;
+  } else {
+    progressHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px;text-align:center"><div style="font-size:10px;color:#4a7a9b;margin-bottom:4px">May 1 DEXA Goal · ${daysLeft} days away</div><div style="font-size:13px;color:#3a5a6a">Enter weight & BF% above</div></div>`;
+  }
+  const adjHTML=adj?('<div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:13px 16px;margin-bottom:12px"><div style="font-size:10px;color:#7a5a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">DEXA-Calibrated Estimate</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center"><div><div style="font-size:15px;font-weight:bold;color:#4fc3f7">'+adj.weight+'kg</div><div style="font-size:9px;color:#2a4a6a;margin-top:2px">DEXA Wt</div></div><div><div style="font-size:15px;font-weight:bold;color:#a78bfa">'+adj.bf+'%</div><div style="font-size:9px;color:#4a3a7a;margin-top:2px">Body Fat</div></div><div><div style="font-size:15px;font-weight:bold;color:#34d399">'+adj.lean+'kg</div><div style="font-size:9px;color:#1a4a3a;margin-top:2px">Lean Mass</div></div><div><div style="font-size:15px;font-weight:bold;color:#fb923c">'+adj.fat+'kg</div><div style="font-size:9px;color:#5a3a1a;margin-top:2px">Fat Mass</div></div></div></div>'):'';
+  container.innerHTML=`<div style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:16px;padding:16px;margin-bottom:12px"><div style="font-size:14px;font-weight:bold;color:#4fc3f7;margin-bottom:12px">⚖️ Morning Weigh-in</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Weight (kg)</div><input id="body-weight-input" type="number" step="0.1" min="50" max="200" value="${w||''}" placeholder="e.g. 104.2" style="width:100%;background:rgba(79,195,247,.08);border:1.5px solid rgba(79,195,247,.3);border-radius:10px;padding:10px 12px;color:#e0f0ff;font-size:16px;-webkit-appearance:none"/>${w?`<div style="font-size:9px;color:#3a6a7a;margin-top:4px">${lbs} lbs</div>`:''}</div><div><div style="font-size:10px;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">BF% (Hume)</div><input id="body-bf-input" type="number" step="0.1" min="5" max="50" value="${bf||''}" placeholder="e.g. 13.9" style="width:100%;background:rgba(167,139,250,.08);border:1.5px solid rgba(167,139,250,.3);border-radius:10px;padding:10px 12px;color:#e0f0ff;font-size:16px;-webkit-appearance:none"/></div></div><button id="body-save-btn" style="width:100%;margin-top:12px;padding:11px;border-radius:11px;font-size:13px;font-weight:bold;border:1.5px solid rgba(79,195,247,.45);background:rgba(79,195,247,.18);color:#4fc3f7;cursor:pointer">Save</button></div>${adjHTML}<div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:14px;padding:12px 16px;margin-bottom:12px"><div style="font-size:10px;color:#7a6a30;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">Hume Targets to Hit 13% Actual BF</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center"><div style="background:rgba(0,0,0,.2);border-radius:8px;padding:8px"><div style="font-size:15px;font-weight:bold;color:#fbbf24">~99–100kg</div><div style="font-size:9px;color:#6a5a20;margin-top:2px">Weight on Hume</div></div><div style="background:rgba(0,0,0,.2);border-radius:8px;padding:8px"><div style="font-size:15px;font-weight:bold;color:#fbbf24">~10%</div><div style="font-size:9px;color:#6a5a20;margin-top:2px">BF% on Hume</div></div></div></div>${progressHTML}<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px;margin-bottom:12px"><div style="font-size:10px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px">Daily Nutrition Goals</div><div style="font-size:9px;color:#3a5a6a;margin-bottom:10px;line-height:1.5">2540 kcal · 195g P · 260g C · 80g F · 35g fibre</div><div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)"><div><div style="font-size:13px;font-weight:bold;color:#4ade80">🔥 Calorie Deficit</div><div style="font-size:10px;color:#3a5a4a;margin-top:1px">2540 kcal target · MFP</div></div><button data-bkey="bodyCalDeficit" style="width:40px;height:40px;border-radius:11px;font-size:18px;border:1.5px solid rgba(74,222,128,${s.bodyCalDeficit?0.6:0.3});background:${s.bodyCalDeficit?'rgba(74,222,128,.25)':'rgba(74,222,128,.07)'};color:#4ade80;cursor:pointer">${state.bodyCalDeficit?'✓':'○'}</button></div><div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)"><div><div style="font-size:13px;font-weight:bold;color:#fb923c">💪 Protein</div><div style="font-size:10px;color:#5a3a1a;margin-top:1px">195g target · 1.9g/kg</div></div><button data-bkey="bodyProtein" style="width:40px;height:40px;border-radius:11px;font-size:18px;border:1.5px solid rgba(251,146,60,${s.bodyProtein?0.6:0.3});background:${s.bodyProtein?'rgba(251,146,60,.25)':'rgba(251,146,60,.07)'};color:#fb923c;cursor:pointer">${state.bodyProtein?'✓':'○'}</button></div><div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)"><div><div style="font-size:13px;font-weight:bold;color:#67e8f9">🍚 Carbs</div><div style="font-size:10px;color:#1a3a4a;margin-top:1px">260g target · 41% kcal</div></div><button data-bkey="bodyCarbs" style="width:40px;height:40px;border-radius:11px;font-size:18px;border:1.5px solid rgba(103,232,249,${s.bodyCarbs?0.6:0.3});background:${s.bodyCarbs?'rgba(103,232,249,.25)':'rgba(103,232,249,.07)'};color:#67e8f9;cursor:pointer">${state.bodyCarbs?'✓':'○'}</button></div><div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)"><div><div style="font-size:13px;font-weight:bold;color:#fde047">🥑 Fat</div><div style="font-size:10px;color:#5a4a10;margin-top:1px">80g target · floor for hormones</div></div><button data-bkey="bodyFat" style="width:40px;height:40px;border-radius:11px;font-size:18px;border:1.5px solid rgba(253,224,71,${s.bodyFat?0.6:0.3});background:${s.bodyFat?'rgba(253,224,71,.25)':'rgba(253,224,71,.07)'};color:#fde047;cursor:pointer">${state.bodyFat?'✓':'○'}</button></div><div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><div><div style="font-size:13px;font-weight:bold;color:#34d399">🌿 Fibre</div><div style="font-size:10px;color:#1a4a3a;margin-top:1px">35g target · 45g stretch</div></div><button data-bkey="bodyFibre" style="width:40px;height:40px;border-radius:11px;font-size:18px;border:1.5px solid rgba(52,211,153,${s.bodyFibre?0.6:0.3});background:${s.bodyFibre?'rgba(52,211,153,.25)':'rgba(52,211,153,.07)'};color:#34d399;cursor:pointer">${state.bodyFibre?'✓':'○'}</button></div></div><div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:11px 14px"><div style="font-size:10px;color:#4a7a9b;font-weight:bold;margin-bottom:6px">DEXA History</div><div style="font-size:10px;color:#2a4a5a;line-height:1.8"><div style="display:flex;justify-content:space-between"><span>Jun 2020</span><span>102.8kg · 19.4%</span></div><div style="display:flex;justify-content:space-between"><span>Sep 2022</span><span>108.5kg · 22.8%</span></div><div style="display:flex;justify-content:space-between"><span>Jun 2024</span><span style="color:#ef5350">117.4kg · 24.9% ← peak</span></div><div style="display:flex;justify-content:space-between"><span>Apr 2025</span><span>107.6kg · 21.0%</span></div><div style="display:flex;justify-content:space-between"><span>Nov 2025</span><span>106.4kg · 18.6%</span></div><div style="display:flex;justify-content:space-between;font-weight:bold"><span style="color:#00e5a0">Apr 2026</span><span style="color:#00e5a0">102.2kg · 16.4% ← GOAL HIT 🎉</span></div><div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:6px;border-top:1px dashed rgba(74,122,155,.2)"><span style="color:#fbbf24">Next target</span><span style="color:#fbbf24">~97-98kg · 13% (athletic)</span></div></div></div>`;
+  container.querySelectorAll('button[data-bkey]').forEach(b=>{
+    b.onclick=()=>{if(viewState)return;state[b.dataset.bkey]=!state[b.dataset.bkey];saveAll();renderBody();};
+  });
+}
+document.addEventListener('click',function(e){
+  if(e.target.id==='whoop-save-btn'){
+    const fields=['whoopRecovery','whoopSleep','whoopHRV','whoopRHR','whoopStrain','whoopSleepHrs','whoopRestorativeSleep','whoopVO2'];
+    fields.forEach(k=>{
+      const el=document.querySelector('[data-wkey="'+k+'"]');
+      if(el){const v=parseFloat(el.value);if(!isNaN(v)&&v>0)state[k]=v;}
+    });
+    saveAll();renderWhoop();
+    return;
+  }
+  if(e.target.id==='body-save-btn'){
+    const wi=document.getElementById('body-weight-input');
+    const bi=document.getElementById('body-bf-input');
+    if(!wi||!bi)return;
+    const wv=parseFloat(wi.value)||0;
+    const bv=parseFloat(bi.value)||0;
+    if(wv>0)state.bodyWeight=wv;
+    if(bv>0)state.bodyFatPct=bv;
+    saveAll();
+    try{renderBody();}catch(err){console.error('renderBody failed:',err);}
+  }
+});
+function buildShareText(){
+  const src=viewState||state;
+  const dt=DAY_TYPES.find(d=>d.id===(src.dayTypeId||state.dayTypeId))||DAY_TYPES[0];
+  const target=dt.target+(src.sessionDrinks*250);
+  const pct=Math.round(((src.water||0)/target)*100);
+  const pw=(src.caffLog||state.caffLog).filter(e=>e.sourceId==='preworkout').length;
+  const suppK=(src.seeking*500)+(src.salts*200)+(pw*100);
+  const suppNa=(src.seeking*150)+(src.salts*1014)+(pw*50);
+  const suppMg=(src.seeking*125)+(src.salts*60)+(pw*50)+(src.suppMag?(src.suppMagDose||150):0);
+  const caffMg=(src.caffLog||state.caffLog).reduce((a,e)=>a+e.mg,0);
+  const suppsDone=[src.suppOmega,src.suppTheanineAM,src.suppTheaninePM,src.suppVitB,src.suppCreatine,src.suppMag,src.suppFinasteride,src.suppD3k2,src.suppGlycineAM,src.suppGlycinePM].filter(Boolean).length;
+  const dateStr=(state.__editing?new Date(state.__editing):new Date()).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+  const adj=src.bodyWeight&&src.bodyFatPct?calcDexaAdjusted(src.bodyWeight,src.bodyFatPct):null;
+  const lbs=src.bodyWeight?(src.bodyWeight*2.2046).toFixed(1):null;
+  const proteinGoal=src.bodyWeight?Math.round(src.bodyWeight*2.2046):null;
+  const daysLeft=Math.max(0,Math.ceil((new Date('2026-05-01')-new Date())/(1000*60*60*24)));
+  const targetWeightAtGoal=adj?Math.round(adj.lean/(1-13/100)*10)/10:null;
+  const fatToLose=adj?Math.max(0,(adj.weight-(targetWeightAtGoal||0))).toFixed(1):null;
+  return [
+    `📊 Stef's Health Log — ${dateStr}`,
+    `🏷️ Day type: ${dt.label}`,
+    ``,
+    `━━━ ⚖️ BODY COMPOSITION ━━━`,
+    `  Hume weight:    ${src.bodyWeight?src.bodyWeight+'kg ('+lbs+'lbs)':'not logged'}`,
+    `  DEXA-adj weight: ${adj?adj.weight+'kg':'—'}`,
+    `  Hume BF%:       ${src.bodyFatPct?src.bodyFatPct+'%':'not logged'}`,
+    `  DEXA-adj BF%:   ${adj?adj.bf+'%':'—'}`,
+    `  Lean mass:      ${adj?adj.lean+'kg':'—'}`,
+    `  Fat mass:       ${adj?adj.fat+'kg':'—'}`,
+    ``,
+    `  ✅ Apr 2026 GOAL: 16.4% BF (target was 17%)`,
+    `  Next stretch: ~13% BF (athletic range)`,
+    `  Fat still to lose: ${fatToLose?fatToLose+'kg':'—'} · lean: 81.77kg`,
+    `  Hume targets: ~98-99kg · ~10-11% display`,
+    ``,
+    `  DEXA History:`,
+    `    Jun 2024: 117.4kg · 24.9% ← peak`,
+    `    Apr 2025: 107.6kg · 21.0%`,
+    `    Nov 2025: 106.4kg · 18.6%`,
+    `    Apr 2026: 102.2kg · 16.4% ← GOAL HIT 🎉`,
+    ``,
+    `  Daily nutrition:`,
+    `    Calories (2540): ${src.bodyCalDeficit?'✓ hit':'✗ missed'}`,
+    `    Protein (195g): ${src.bodyProtein?'✓ hit':'✗ missed'}`,
+    `    Carbs (260g): ${src.bodyCarbs?'✓ hit':'✗ missed'}`,
+    `    Fat (80g): ${src.bodyFat?'✓ hit':'✗ missed'}`,
+    `    Fibre (35g): ${src.bodyFibre?'✓ hit':'✗ missed'}`,
+    ``,
+    `━━━ 🍻 DRINKS & CANNABIS ━━━`,
+    `  Alcohol: ${fmt05(src.sessionDrinks)} std drinks today / ${fmt05(src.weekDrinks)} this week`,
+    `  Last drink: ${src.lastDrinkTime||'none'}`,
+    `  Cannabis edible: ${src.mjEdible} instances · vape: ${src.mjVape} puffs${src.lastMJTime?' · last '+src.lastMJTime:''}`,
+    ``,
+    `━━━ 🏃 EXERCISE & STEPS ━━━`,
+    `  🚶 Steps: ${(src.dailySteps||0).toLocaleString()} / 12,000 goal`,
+    `  🧘 Meditation: ${src.habitMeditation?'✓ done':'✗ not done'}`,
+    `  🤸 Pliability: ${src.habitPliability?'✓ done':'✗ not done'}`,
+    `  🏋️ Strength: ${src.habitStrengthMins}min this week / 150min goal`,
+    `  🚶 Zone 1-3: ${src.habitZone13Mins}min this week / 150min goal`,
+    `  🔥 Zone 4-5: ${src.habitZone45Mins}min this week / 50min goal`,
+    ``,
+    `━━━ 💧 HYDRATION ━━━`,
+    `  ${pct}% (${fml(src.water)} / ${fml(target)})`,
+    ``,
+    `━━━ ☕ CAFFEINE ━━━`,
+    `  ${caffMg}mg`,
+    ``,
+    `━━━ 💊 SUPPS ━━━`,
+    `  ${suppsDone}/10 done`,
+    ``,
+    `━━━ 🚬 SMOKES ━━━`,
+    `  ${src.cigs>0?fmt05(src.cigs)+' today':'None today'}`,
+    ``,
+    `━━━ ⚡ ELECTROLYTES (supps) ━━━`,
+    `  K: ${suppK}mg · Na: ${suppNa}mg (~${suppNa+2200}mg total) · Mg: ${suppMg}mg`,
+    ``,
+    `━━━ 📱 SCREEN TIME ━━━`,
+    `  ${src.screenTimeMins}min / 30min goal`,
+    ``,
+    `━━━ 🫀 WHOOP ━━━`,
+    `  Recovery: ${src.whoopRecovery||'not logged'}${src.whoopRecovery?'%':''}`,
+    `  Sleep score: ${src.whoopSleep||'not logged'}${src.whoopSleep?'%':''}`,
+    `  HRV: ${src.whoopHRV||'not logged'}${src.whoopHRV?'ms':''}`,
+    `  RHR: ${src.whoopRHR||'not logged'}${src.whoopRHR?'bpm':''}`,
+    `  Strain: ${src.whoopStrain||'not logged'}`,
+    `  Sleep: ${src.whoopSleepHrs||'not logged'}${src.whoopSleepHrs?'h':''}`,
+    `  Restorative sleep: ${src.whoopRestorativeSleep||'not logged'}${src.whoopRestorativeSleep?'%':''}`,
+    `  VO₂ Max: ${src.whoopVO2||'not logged'}`,
+  ].join('\n');
+}
+function buildWhoopText(){
+  const lastCaff=state.caffLog.length?state.caffLog[state.caffLog.length-1].time:'--';
+  const glasses=Math.round(state.water/240);
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
+  const dateStr=(state.__editing?new Date(state.__editing):new Date()).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+  const fracs=['0','¼','½','¾','1','1¼','1½','1¾','2'];
+  return [
+    `🔄 Whoop Journal — ${dateStr}`,
+    ``,
+    `SEXUAL ACTIVITY`,
+    `  Sexual activity: ${(state.sexActivityCount||0)>0?(state.sexActivityCount||0)+'x':'No'}${state.sexActivityTime?' · last '+state.sexActivityTime:''}`,
+    `  Masturbation: ${(state.sexMasturbationCount||0)>0?(state.sexMasturbationCount||0)+'x':'No'}${state.sexMasturbationTime?' · last '+state.sexMasturbationTime:''}`,
+    ``,
+    `ALCOHOL`,
+    `  Avoided: ${state.sessionDrinks===0?'Yes':'No'}`,
+    `  Drinks: ${fmt05(state.sessionDrinks)} std`,
+    `  Last drink: ${state.lastDrinkTime||'--'}`,
+    ``,
+    `MARIJUANA`,
+    `  Avoided: ${(state.mjEdible+state.mjVape)===0?'Yes':'No'}`,
+    `  Edible: ${state.mjEdible} instances (${fracs[Math.min(state.mjEdible,8)]||state.mjEdible} gummy)`,
+    `  Vape: ${state.mjVape} puffs`,
+    `  Last: ${state.lastMJTime||'--'}`,
+    ``,
+    `TOBACCO`,
+    `  Avoided: ${state.cigs===0?'Yes':'No'}`,
+    `  Instances: ${fmt05(state.cigs)}`,
+    `  Last: ${state.lastSmokeTime||'--'}`,
+    ``,
+    `CAFFEINE`,
+    `  Consumed: ${state.caffLog.length>0?'Yes':'No'}`,
+    `  Servings: ${state.caffLog.length}`,
+    `  Last: ${lastCaff}`,
+    ``,
+    `HYDRATION`,
+    `  Sufficient: ${state.water>=dt.target?'Yes':'No'}`,
+    `  Glasses (240ml): ${glasses}`,
+    ``,
+    `MEDITATION`,
+    `  Done: ${state.habitMeditation?'Yes':'No'}`,
+    `  Time: ${state.lastMedTime||'--'}`,
+    ``,
+    `STRETCHING`,
+    `  Done: ${state.habitPliability?'Yes':'No'}`,
+    `  Time: ${state.lastStretchTime||'--'}`,
+    ``,
+    `SUPPLEMENTS`,
+    `  Creatine: ${state.suppCreatine?'Yes — 15g':'No'}`,
+    `  Electrolytes: ${(state.seeking+state.salts)>0?'Yes':'No'}`,
+    `  L-Theanine: ${(state.suppTheanineAM||state.suppTheaninePM)?'Yes — '+((state.suppTheanineAM?200:0)+(state.suppTheaninePM?200:0))+'mg':'No'}`,
+    `  Magnesium: ${state.suppMag?'Yes — '+(state.suppMagDose||150)+'mg':'No'}`,
+    `  Omega-3: ${state.suppOmega?'Yes — 1.28g':'No'}`,
+    `  Vitamin D3/K2: ${state.suppD3k2?'Yes':'No'}`,
+    `  Glycine: ${(state.suppGlycineAM||state.suppGlycinePM)?'Yes — '+((state.suppGlycineAM?(state.suppGlycineAMDose||1):0)+(state.suppGlycinePM?(state.suppGlycinePMDose||1):0))+'g':'No'}`,
+    ``,
+    `NIGHTTIME`,
+    `  Screen in bed: ${state.screenTimeMins>0?'Yes — '+state.screenTimeMins+'min':'No'}`,
+    `  Restorative sleep: ${state.whoopRestorativeSleep||'--'}${state.whoopRestorativeSleep?'%':''}`,
+    ``,
+    `=== TIMING LOG (Whoop correlation) ===`,
+    ...formatTimingLog(),
+  ].join('\n');
+}
+function formatTimingLog(){
+  const lines=[];
+  const sections=[
+    {key:'waterLog',label:'💧 Water'},
+    {key:'caffLog',label:'☕ Caffeine'},
+    {key:'electroLog',label:'⚡ Electrolytes'},
+    {key:'suppLog',label:'💊 Supps'},
+    {key:'drinksLog',label:'🍻 Alcohol'},
+    {key:'mjLog',label:'🌿 Cannabis'},
+    {key:'smokesLog',label:'🚬 Smokes'},
+    {key:'oralLog',label:'🦷 Oral'},
+    {key:'habitsLog',label:'🧘 Habits'},
+    {key:'sexLog',label:'❤️ Activity'},
+  ];
+  sections.forEach(s=>{
+    const log=Array.isArray(state[s.key])?state[s.key]:[];
+    if(log.length>0){
+      lines.push('');
+      lines.push(s.label+':');
+      log.forEach(e=>{
+        const lbl=e.label||(e.mg?(e.sourceId||'caffeine')+' '+e.mg+'mg':'');
+        lines.push('  '+(e.time||'--:--')+' · '+lbl);
+      });
+    }
+  });
+  return lines;
+}
+document.addEventListener('click',e=>{
+  if(e.target.id==='share-btn'){
+    const text=buildShareText();
+    navigator.clipboard.writeText(text).then(()=>{const fb=document.getElementById('share-feedback');fb.style.display='block';setTimeout(()=>fb.style.display='none',2500);}).catch(()=>{prompt('Copy:',text);});
+  }
+  if(e.target.id==='export-week-btn'||e.target.id==='export-april-btn'){
+    const isApril=e.target.id==='export-april-btn';
+    const rows=['Date,Day Type,Water%,Water(ml),Drinks,Caffeine(mg),Supps,Steps,Screen(min),Smokes,K(mg),Na(mg),Mg(mg)'];
+    const days=isApril?35:7;
+    for(let i=days-1;i>=0;i--){
+      const d=new Date();d.setDate(d.getDate()-i);
+      if(isApril&&(d.getMonth()!==2&&d.getMonth()!==3))continue;
+      const key=d.toDateString();
+      let entry=null;
+      if(key===new Date().toDateString()){
+        const dt=DAY_TYPES.find(x=>x.id===state.dayTypeId)||DAY_TYPES[0];
+        const tw=dt.target+(state.sessionDrinks*250);
+        entry={dateLabel:d.toLocaleDateString('en-AU',{day:'numeric',month:'short'}),dayType:dt.label,water:state.water,waterTarget:tw,drinks:state.sessionDrinks,caffMg:state.caffLog.reduce((a,e)=>a+e.mg,0),supps:[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag,state.suppFinasteride,state.suppD3k2,state.suppGlycineAM,state.suppGlycinePM].filter(Boolean).length,dailySteps:state.dailySteps,screenTimeMins:state.screenTimeMins,cigs:state.cigs,suppK:(state.seeking*500)+(state.salts*200),suppNa:(state.seeking*150)+(state.salts*1014),suppMg:(state.seeking*125)+(state.salts*60)+(state.suppMag?150:0)};
+      } else {
+        try{const v=localStorage.getItem('snap_'+key);if(v)entry={...JSON.parse(v)};}catch{}
+      }
+      if(entry){
+        const wpct=Math.round((entry.water/(entry.waterTarget||3000))*100);
+        rows.push([entry.dateLabel,'"'+entry.dayType+'"',wpct+'%',entry.water,fmt05(entry.drinks||0),entry.caffMg||0,entry.supps||0,entry.dailySteps||0,entry.screenTimeMins||0,fmt05(entry.cigs||0),entry.suppK||0,entry.suppNa||0,entry.suppMg||0].join(','));
+      }
+    }
+    const csv=rows.join('\n');
+    const title=isApril?'April Health Export':'Weekly Health Export';
+    navigator.clipboard.writeText(csv).then(()=>{const fb=document.getElementById('share-feedback');fb.textContent='✓ '+title+' copied! Paste into Excel/Sheets.';fb.style.display='block';setTimeout(()=>{fb.style.display='none';fb.textContent='✓ Copied to clipboard!';},3000);}).catch(()=>prompt('Copy CSV:',csv));
+    return;
+  }
+  if(e.target.id==='whoop-export-btn'){
+    const wt=buildWhoopText();
+    navigator.clipboard.writeText(wt).then(()=>{const fb=document.getElementById('share-feedback');fb.textContent='✓ Whoop Journal copied!';fb.style.display='block';setTimeout(()=>{fb.style.display='none';fb.textContent='✓ Copied to clipboard!';},3000);}).catch(()=>{prompt('Copy:',wt);});
+  }
+});
+function renderAllEventLogs(){
+  try{renderEventLog('panel-water','waterLog',{title:'💧 Water Log',emptyText:'Tap to add water and entries appear here',formatter:e=>e.label});}catch{}
+  try{renderEventLog('panel-electrolytes','electroLog',{title:'⚡ Electrolyte Log',emptyText:'Tap a product to log it',formatter:e=>e.label});}catch{}
+  try{renderEventLog('panel-drinks','drinksLog',{title:'🍻 Alcohol Log',emptyText:'No drinks logged today',formatter:e=>e.label});}catch{}
+  try{renderEventLog('panel-drinks','mjLog',{title:'🌿 Cannabis Log',emptyText:'No cannabis logged today',formatter:e=>e.label});}catch{}
+  try{renderEventLog('panel-smokes','smokesLog',{title:'🚬 Smoke Log',emptyText:'No smokes today — keep going',formatter:e=>e.label});}catch{}
+  try{renderEventLog('panel-supps','suppLog',{title:'💊 Supplement Log',emptyText:'Tap a supplement to log it',formatter:e=>e.label});}catch{}
+  try{renderEventLog('panel-oral','oralLog',{title:'🦷 Oral Hygiene Log',emptyText:'Tap to log brushing/flossing',formatter:e=>e.label});}catch{}
+  try{renderEventLog('panel-sex','sexLog',{title:'❤️ Activity Log',emptyText:'No activity logged today',formatter:e=>e.label});}catch{}
+  try{renderEventLog('panel-habits','habitsLog',{title:'🧘 Habits Log',emptyText:'Tap meditation/stretch to log',formatter:e=>e.label});}catch{}
+}
+function render(){
+  const fns=[renderBody,renderWhoop,renderSex,renderWater,renderElec,renderDrinks,renderSmokes,renderCaff,renderSupps,renderOral,renderHabits,renderScreenTime,saveSnapshot,renderAllEventLogs];
+  fns.forEach(function(fn){
+    try{fn();}catch(err){console.error(fn.name+' FAILED:',err.message||err);}
+  });
+}
+render();
+setInterval(()=>{renderDrinks();renderCaff();},60000);
+
+
+// === EDIT MODE INFRASTRUCTURE (v8) ===
+const DAILY_DEFAULTS={
+  bodyWeight:0,bodyFatPct:0,
+  whoopRecovery:0,whoopSleep:0,whoopHRV:0,whoopRHR:0,whoopStrain:0,whoopSleepHrs:0,whoopRestorativeSleep:0,whoopVO2:0,
+  bodyCalDeficit:false,bodyProtein:false,bodyCarbs:false,bodyFat:false,bodyFibre:false,
+  water:0,dayTypeId:'rest',
+  seeking:0,bulk:0,salts:0,
+  sessionDrinks:0,lastDrinkTime:'',
+  mjEdible:0,mjVape:0,lastMJTime:'',
+  cigs:0,lastSmokeTime:'',
+  caffLog:[],waterLog:[],drinksLog:[],mjLog:[],smokesLog:[],suppLog:[],oralLog:[],sexLog:[],habitsLog:[],electroLog:[],
+  suppOmega:false,suppTheanineAM:false,suppTheaninePM:false,suppVitB:false,suppMag:false,suppFinasteride:false,suppCreatine:false,suppD3k2:false,suppGlycineAM:false,suppGlycinePM:false,
+  suppMagDose:150,suppGlycineAMDose:1,suppGlycinePMDose:1,
+  oralBrushAM:false,oralMouthwashAM:false,oralBrushPM:false,oralFlossPM:false,oralPickstersPM:false,oralMouthwashPM:false,
+  dailySteps:0,screenTimeMins:0,
+  habitMeditation:false,habitPliability:false,lastMedTime:'',lastStretchTime:'',
+  sexActivity:false,sexActivityCount:0,sexActivityTime:'',sexMasturbation:false,sexMasturbationCount:0,sexMasturbationTime:'',
+};
+function captureDailyState(){
+  const cap={};
+  Object.keys(DAILY_DEFAULTS).forEach(k=>{cap[k]=Array.isArray(state[k])?JSON.parse(JSON.stringify(state[k])):state[k];});
+  return cap;
+}
+function buildSnapFromCurrentState(dateStr){
+  const dt=DAY_TYPES.find(d=>d.id===state.dayTypeId)||DAY_TYPES[0];
+  const targetWater=dt.target+(state.sessionDrinks*250);
+  const dateLabel=new Date(dateStr).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+  const snap={date:dateStr,dateLabel:dateLabel,dayType:dt.label,waterTarget:targetWater};
+  Object.keys(DAILY_DEFAULTS).forEach(k=>{snap[k]=Array.isArray(state[k])?JSON.parse(JSON.stringify(state[k])):state[k];});
+  snap.caffMg=(state.caffLog||[]).reduce((a,e)=>a+(e.mg||0),0);
+  snap.lastCaffTime=(state.caffLog||[]).length?state.caffLog[state.caffLog.length-1].time:'';
+  snap.drinks=state.sessionDrinks;
+  snap.supps=[state.suppOmega,state.suppTheanineAM,state.suppTheaninePM,state.suppVitB,state.suppCreatine,state.suppMag,state.suppFinasteride,state.suppD3k2,state.suppGlycineAM,state.suppGlycinePM].filter(Boolean).length;
+  snap.suppK=(state.seeking*500)+(state.salts*200);
+  snap.suppNa=(state.seeking*150)+(state.salts*1014);
+  snap.suppMg=(state.seeking*125)+(state.salts*60)+(state.suppMag?(state.suppMagDose||150):0);
+  return snap;
+}
+function formatEditDate(dateStr){
+  const d=new Date(dateStr);
+  return isNaN(d.getTime())?dateStr:d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+}
+function enterEditMode(dateStr){
+  if(state.__editing){alert('Already editing '+formatEditDate(state.__editing)+'. Save or cancel first.');return;}
+  if(!confirm('Edit '+formatEditDate(dateStr)+'?\n\nYou can update fields across all tabs, then Save & Exit or Cancel.\nUse Export Day to copy this day for your coach.'))return;
+  state.__editingStash=captureDailyState();
+  // Clear daily fields to defaults
+  Object.keys(DAILY_DEFAULTS).forEach(k=>{state[k]=Array.isArray(DAILY_DEFAULTS[k])?[...DAILY_DEFAULTS[k]]:DAILY_DEFAULTS[k];});
+  // Load saved snap if any
+  try{
+    const v=localStorage.getItem('snap_'+dateStr);
+    if(v){
+      const snap=JSON.parse(v);
+      Object.keys(DAILY_DEFAULTS).forEach(k=>{if(snap[k]!==undefined)state[k]=snap[k];});
+      // Legacy snap support: if no caffLog but caffMg, fake an entry
+      if((!Array.isArray(state.caffLog)||state.caffLog.length===0)&&snap.caffMg){
+        state.caffLog=[{time:snap.lastCaffTime||'12:00',label:'Imported',mg:snap.caffMg,sourceId:'unknown'}];
+      }
+    }
+  }catch{}
+  state.__editing=dateStr;
+  showEditBanner();
+  render();
+  // Auto-jump to body tab so user sees their data
+  state.activeTab='body';
+  // Switch to body panel manually
+  const tabs=document.querySelectorAll('[id^=tab-]');
+  tabs.forEach(t=>{if(t.id==='tab-body'){t.className='tab active';}else{t.className='tab';}});
+  const panels=document.querySelectorAll('.panel');
+  panels.forEach(p=>{p.className='panel'+(p.id==='panel-body'?' active':'');p.style.display=p.id==='panel-body'?'block':'none';});
+  // Hide history panel if open
+  const hp=document.getElementById('panel-history');if(hp){hp.style.display='none';hp.className='panel';}
+  const hb=document.getElementById('history-toggle-btn');
+  if(hb){hb.style.color='#4a7a9b';hb.style.background='rgba(74,122,155,.1)';hb.style.border='1px solid rgba(74,122,155,.25)';}
+  window.scrollTo(0,0);
+}
+function exitEditMode(save){
+  if(!state.__editing)return;
+  const editingDate=state.__editing;
+  if(save){
+    const snap=buildSnapFromCurrentState(editingDate);
+    try{localStorage.setItem('snap_'+editingDate,JSON.stringify(snap));}catch{}
+  }
+  // Restore today's state
+  Object.assign(state,state.__editingStash);
+  delete state.__editing;
+  delete state.__editingStash;
+  hideEditBanner();
+  render();
+  if(save)setTimeout(()=>{alert('✓ Saved changes to '+formatEditDate(editingDate));},100);
+}
+function showEditBanner(){
+  const banner=document.getElementById('view-banner');
+  banner.setAttribute('style','display:flex;flex-direction:column;background:rgba(167,139,250,.15);border:1.5px solid rgba(167,139,250,.5);border-radius:12px;padding:11px 14px;margin-bottom:10px;gap:8px');
+  banner.innerHTML='<div style="font-size:12px;color:#a78bfa;font-weight:bold;text-align:center">📝 Editing: '+formatEditDate(state.__editing)+'</div><div style="display:flex;gap:6px;width:100%"><button id="edit-save" style="flex:1.4;font-size:11px;font-weight:bold;color:#4ade80;background:rgba(74,222,128,.2);border:1px solid rgba(74,222,128,.5);border-radius:7px;padding:7px 6px;cursor:pointer">✓ Save &amp; Exit</button><button id="edit-cancel" style="flex:1;font-size:11px;color:#ef9090;background:rgba(239,83,80,.1);border:1px solid rgba(239,83,80,.3);border-radius:7px;padding:7px 6px;cursor:pointer">✕ Cancel</button><button id="edit-export" style="flex:1.3;font-size:11px;font-weight:bold;color:#a78bfa;background:rgba(167,139,250,.18);border:1px solid rgba(167,139,250,.45);border-radius:7px;padding:7px 6px;cursor:pointer">📤 Export</button></div>';
+  document.getElementById('edit-save').onclick=()=>exitEditMode(true);
+  document.getElementById('edit-cancel').onclick=()=>{if(confirm('Discard changes? This cannot be undone.'))exitEditMode(false);};
+  document.getElementById('edit-export').onclick=()=>{
+    const txt=buildShareText();
+    navigator.clipboard.writeText(txt).then(()=>{
+      const fb=document.getElementById('share-feedback');
+      if(fb){fb.textContent='✓ '+formatEditDate(state.__editing)+' export copied!';fb.style.display='block';setTimeout(()=>{fb.style.display='none';},3000);}
+      else alert('✓ Copied to clipboard');
+    }).catch(()=>prompt('Copy:',txt));
+  };
+}
+function hideEditBanner(){
+  const banner=document.getElementById('view-banner');
+  banner.setAttribute('style','display:none');
+  banner.innerHTML='';
+}
+// Click handler for history entries — enter edit mode
+document.addEventListener('click',function(e){
+  const el=e.target.closest&&e.target.closest('[data-snapdate]');
+  if(el&&el.dataset.snapdate&&!state.__editing){
+    enterEditMode(el.dataset.snapdate);
+  }
+});
+
+</script>
+
+</body>
+</html>
